@@ -416,7 +416,8 @@ static uint8_t flightsim_report_desc[] = {
 
 #define AUDIO_INTERFACE_DESC_POS	KEYMEDIA_INTERFACE_DESC_POS+KEYMEDIA_INTERFACE_DESC_SIZE
 #ifdef  AUDIO_INTERFACE
-#define AUDIO_INTERFACE_DESC_SIZE	9+10+12+9+12+10+9 + 9+9+7+11+9+7 + 9+9+7+11+9+7+9
+//#define AUDIO_INTERFACE_DESC_SIZE	9+10+12+9+12+10+9 + 9+9+7+11+9+7 + 9+9+7+11+9+7+9
+#define AUDIO_INTERFACE_DESC_SIZE	9+10+12+9+12+10+9 + 9+9+7+11+9+7 + 9+9+7+11+9+7
 #else
 #define AUDIO_INTERFACE_DESC_SIZE	0
 #endif
@@ -1051,7 +1052,7 @@ static uint8_t config_descriptor[CONFIG_DESC_SIZE] = {
 	LSB(AUDIO_RX_SIZE), MSB(AUDIO_RX_SIZE),	// wMaxPacketSize
 	1,			 		// bInterval, 1 = every frame
 	0,					// bRefresh
-	AUDIO_SYNC_ENDPOINT | 0x80,		// bSynchAddress
+	0, //AUDIO_SYNC_ENDPOINT | 0x80,		// bSynchAddress
 	// Class-Specific AS Isochronous Audio Data Endpoint Descriptor
 	// USB DCD for Audio Devices 1.0, Section 4.6.1.2, Table 4-21, page 62-63
 	7,  					// bLength
@@ -1060,16 +1061,6 @@ static uint8_t config_descriptor[CONFIG_DESC_SIZE] = {
 	0x00,  					// bmAttributes
 	0,  					// bLockDelayUnits, 1 = ms
 	0x00, 0x00,  				// wLockDelay
-	// Standard AS Isochronous Audio Synch Endpoint Descriptor
-	// USB DCD for Audio Devices 1.0, Section 4.6.2.1, Table 4-22, page 63-64
-	9, 					// bLength
-	5, 					// bDescriptorType, 5 = ENDPOINT_DESCRIPTOR
-	AUDIO_SYNC_ENDPOINT | 0x80,		// bEndpointAddress
-	0x01, 					// bmAttributes = isochronous
-	3, 0,					// wMaxPacketSize, 3 bytes
-	1,			 		// bInterval, 1 = every frame
-	5,					// bRefresh, 5 = 32ms
-	0,					// bSynchAddress
 #endif
 };
 
