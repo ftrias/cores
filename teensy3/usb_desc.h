@@ -113,6 +113,7 @@ If these instructions are missing steps or could be improved, please
 let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
 */
 
+#include "usb_desc_audio.h"
 
 #if defined(USB_SERIAL)
   #define VENDOR_ID		0x16C0
