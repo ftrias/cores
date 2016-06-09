@@ -68,7 +68,7 @@
 static uint8_t device_descriptor[] = {
         18,                                     // bLength
         1,                                      // bDescriptorType
-        0x01, 0x01,                             // bcdUSB
+        0x10, 0x01,                             // bcdUSB
 #ifdef DEVICE_CLASS
         DEVICE_CLASS,                           // bDeviceClass
 #else
@@ -320,6 +320,65 @@ static uint8_t multitouch_report_desc[] = {
         0x95, 0x01,                     //   Report Count (1)
         0xB1, 0x02,                     //   Feature (variable,absolute)
         0xC0                            // End Collection
+};
+#endif
+
+#ifdef MULTITOUCH_INTERFACE
+// https://forum.pjrc.com/threads/32331-USB-HID-Touchscreen-support-needed
+// https://msdn.microsoft.com/en-us/library/windows/hardware/jj151563%28v=vs.85%29.aspx
+// https://msdn.microsoft.com/en-us/library/windows/hardware/jj151565%28v=vs.85%29.aspx
+// https://msdn.microsoft.com/en-us/library/windows/hardware/ff553734%28v=vs.85%29.aspx
+// https://msdn.microsoft.com/en-us/library/windows/hardware/jj151564%28v=vs.85%29.aspx
+// download.microsoft.com/download/a/d/f/adf1347d-08dc-41a4-9084-623b1194d4b2/digitizerdrvs_touch.docx
+static uint8_t multitouch_report_desc[] = {
+        0x05, 0x0D,             // Usage Page (Digitizer)
+        0x09, 0x04,             // Usage (Touch Screen)
+        0xa1, 0x01,             // Collection (Application)
+        0x09, 0x22,             //   Usage (Finger)
+        0xA1, 0x02,             //   Collection (Logical)
+        0x09, 0x42,             //     Usage (Tip Switch)
+        0x15, 0x00,             //     Logical Minimum (0)
+        0x25, 0x01,             //     Logical Maximum (1)
+        0x75, 0x01,             //     Report Size (1)
+        0x95, 0x01,             //     Report Count (1)
+        0x81, 0x02,             //     Input (variable,absolute)
+        0x09, 0x30,             //     Usage (Pressure)
+        0x25, 0x7F,             //     Logical Maximum (127)
+        0x75, 0x07,             //     Report Size (7)
+        0x95, 0x01,             //     Report Count (1)
+        0x81, 0x02,             //     Input (variable,absolute)
+        0x09, 0x51,             //     Usage (Contact Identifier)
+        0x26, 0xFF, 0x00,       //     Logical Maximum (255)
+        0x75, 0x08,             //     Report Size (8)
+        0x95, 0x02,             //     Report Count (1)
+        0x81, 0x02,             //     Input (variable,absolute)
+        0x05, 0x01,             //     Usage Page (Generic Desktop)
+        0x09, 0x30,             //     Usage (X)
+        0x09, 0x31,             //     Usage (Y)
+        0x26, 0xFF, 0x7F,       //     Logical Maximum (32767)
+        0x65, 0x00,             //     Unit (None)  <-- probably needs real units?
+        0x75, 0x10,             //     Report Size (16)
+        0x95, 0x01,             //     Report Count (2)
+        0x81, 0x02,             //     Input (variable,absolute)
+        0xC0,                   //   End Collection
+        0x05, 0x0D,             //   Usage Page (Digitizer)
+        0x27, 0xFF, 0xFF, 0, 0, //   Logical Maximum (65535)
+        0x75, 0x10,             //   Report Size (16)
+        0x95, 0x01,             //   Report Count (1)
+        0x09, 0x56,             //   Usage (Scan Time)
+        0x81, 0x02,             //   Input (variable,absolute)
+        0x09, 0x54,             //   Usage (Contact Count)
+        0x25, 0x0A,             //   Logical Maximum (10)
+        0x75, 0x08,             //   Report Size (8)
+        0x95, 0x01,             //   Report Count (1)
+        0x81, 0x02,             //   Input (variable,absolute)
+        0x05, 0x0D,             //   Usage Page (Digitizers)
+        0x09, 0x55,             //   Usage (Contact Count Maximum)
+        0x25, 0x0A,             //   Logical Maximum (10)
+        0x75, 0x08,             //   Report Size (8)
+        0x95, 0x01,             //   Report Count (1)
+        0xB1, 0x02,             //   Feature (variable,absolute)
+        0xC0                    // End Collection
 };
 #endif
 
@@ -1096,7 +1155,7 @@ static uint8_t config_descriptor[CONFIG_DESC_SIZE] = {
 	4,					// bDescriptorType = INTERFACE
 	AUDIO_INTERFACE+2,			// bInterfaceNumber
 	1,					// bAlternateSetting
-	2,					// bNumEndpoints
+	1,					// bNumEndpoints
 	1,					// bInterfaceClass, 1 = AUDIO
 	2,					// bInterfaceSubclass, 2 = AUDIO_STREAMING
 	0,					// bInterfaceProtocol
