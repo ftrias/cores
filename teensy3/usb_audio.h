@@ -49,10 +49,17 @@ struct setup_struct {
 };
 
 // audio features supported
-struct usb_audio_features_struct {
+class usb_audio_features {
+  public:
   int change;  // set to 1 when any value is changed
+  int xtra;
   int mute;    // 1=mute, 0=unmute
-  int volume;  // volume from 0 to FEATURE_MAX_VOLUME, maybe should be float from 0.0 to 1.0
+  int volume[2];  // volume[0] is right, volume[1] is left; value from 0 to FEATURE_MAX_VOLUME
+  usb_audio_features() : change(0), mute(0) { volume[0] = 0; volume[1] = 0; }
+  float getVolume(int channel=0) { 
+    if (mute) return 0.0;
+    return (float)volume[channel] / (float)FEATURE_MAX_VOLUME; 
+  }
 };
 
 #include "AudioStream.h"
@@ -67,7 +74,7 @@ public:
 	friend int usb_audio_set_feature(void *stp, uint8_t *buf);
 	friend int usb_audio_get_feature(void *stp, uint8_t *data, uint32_t *datalen);
 
-	static struct usb_audio_features_struct features;
+	static usb_audio_features features;
 
 private:
 	static bool update_responsibility;

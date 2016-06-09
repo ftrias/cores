@@ -49,7 +49,7 @@ audio_block_t * AudioInputUSB::ready_right;
 uint16_t AudioInputUSB::incoming_count;
 uint8_t AudioInputUSB::receive_flag;
 
-struct usb_audio_features_struct AudioInputUSB::features = {0,0,FEATURE_MAX_VOLUME};
+usb_audio_features AudioInputUSB::features;
 
 #define DMABUFATTR __attribute__ ((section(".dmabuffers"), aligned (4)))
 uint16_t usb_audio_receive_buffer[AUDIO_RX_SIZE/2] DMABUFATTR;
@@ -75,6 +75,44 @@ void AudioInputUSB::begin(void)
 	usb_audio_sync_feedback = feedback_accumulator >> 8;
 }
 
+#if 0
+static void simple_copy_to_buffers(const uint32_t *src, int16_t *left, int16_t *right, unsigned int len)
+{
+	int16_t *data = (int16_t*)src;
+	while(len--) {
+		*left++ = *data++;
+		*right++ = *data++;
+	}
+}
+#endif
+
+#if 0
+static void copy_to_buffers(const uint32_t *src, int16_t *left, int16_t *right, unsigned int len)
+{
+        __asm(
+                "push {r4-r7}\n"
+                ".whilelen:\n"
+                "ldr r5, [r0], #4\n"
+                "ldr r4, [r0], #4\n"
+
+                "mov r6, r5, lsr #16\n"
+                "mov r7, r4, lsl #16\n"
+                "bfc r4, #0, #16\n"
+                "bfc r5, #16, #16\n"
+                "orr r6, r6, r4\n"
+                "orr r7, r7, r5\n"
+
+                "str r6, [r1], #4\n"
+                "str r7, [r2], #4\n"
+
+                "subs r3, #2\n"
+                "bne .whilelen\n"
+                "pop {r4-r7}\n"
+        );
+}
+#endif
+
+#if 1
 static void copy_to_buffers(const uint32_t *src, int16_t *left, int16_t *right, unsigned int len)
 {
 	uint32_t *target = (uint32_t*) src + len; 
@@ -99,6 +137,7 @@ static void copy_to_buffers(const uint32_t *src, int16_t *left, int16_t *right, 
 		*right++ = n >> 16;
 	}
 }
+#endif
 
 // Called from the USB interrupt when an isochronous packet arrives
 // we must completely remove it from the receive buffer before returning
@@ -361,8 +400,8 @@ int usb_audio_get_feature(void *stp, uint8_t *data, uint32_t *datalen)
 			}
 			else if (setup.bCS==0x02) { // volume
 				if (setup.bRequest==0x81) { // GET_CURR
-					data[0] = AudioInputUSB::features.volume & 0xFF;
-					data[1] = (AudioInputUSB::features.volume>>8) & 0xFF;
+					data[0] = AudioInputUSB::features.volume[setup.bChannel-1] & 0xFF;
+					data[1] = (AudioInputUSB::features.volume[setup.bChannel-1] >> 8) & 0xFF;
 				}
 				else if (setup.bRequest==0x82) { // GET_MIN
 					//serial_print("vol get_min\n");
@@ -400,7 +439,8 @@ int usb_audio_set_feature(void *stp, uint8_t *buf)
 			}
 			else if (setup.bCS==0x02) { // volume
 				if (setup.bRequest==0x01) { // SET_CUR
-					AudioInputUSB::features.volume = buf[0] + (buf[1]<<8);
+					AudioInputUSB::features.xtra = setup.bChannel;
+					AudioInputUSB::features.volume[setup.bChannel-1] = buf[0] + (buf[1]<<8);
 					AudioInputUSB::features.change = 1;
 					return 1;
 				}
