@@ -102,6 +102,7 @@ void fault_isr(void)
         ser_print("\n");
         asm("ldr %0, [sp, #0]" : "=r" (addr) ::);
 #endif
+#if 0
 	while (1) {
 		// keep polling some communication while in fault
 		// mode, so we don't completely die.
@@ -110,10 +111,14 @@ void fault_isr(void)
 		if (SIM_SCGC4 & SIM_SCGC4_UART1) uart1_status_isr();
 		if (SIM_SCGC4 & SIM_SCGC4_UART2) uart2_status_isr();
 	}
+#endif
+	asm("bkpt");
+	while(1);
 }
 
 void unused_isr(void)
 {
+	asm("bkpt");
 	fault_isr();
 }
 
@@ -639,8 +644,15 @@ void (* const _VectorsFlash[NVIC_NUM_INTERRUPTS+16])(void) =
 
 __attribute__ ((section(".flashconfig"), used))
 const uint8_t flashconfigbytes[16] = {
-	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-	0xFF, 0xFF, 0xFF, 0xFF, 0xFE, 0xFF, 0xFF, 0xFF
+//0,0,0,0, 0,0,0,0, // backdoor
+//0,0,0,0, // program flash prot FPROT0-3
+//0, // data flash FDPROT
+//0, // EEPROM FEPROT
+//0, // flash option FOPT
+//0, // flash security FSEC
+	0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F,
+	0xFF, 0xFF, 0xFF, 0xFF,
+	0xFF, 0xFF, 0xFF, 0xFF
 };
 
 
@@ -731,11 +743,13 @@ void ResetHandler(void)
 	PORTB_PCR17 = PORT_PCR_MUX(3);
 #endif
 #ifdef KINETISK
+#ifndef SKIP_RTC_OSC
 	// if the RTC oscillator isn't enabled, get it started early
 	if (!(RTC_CR & RTC_CR_OSCE)) {
 		RTC_SR = 0;
 		RTC_CR = RTC_CR_SC16P | RTC_CR_SC4P | RTC_CR_OSCE;
 	}
+#endif
 #endif
 	// release I/O pins hold, if we woke up from VLLS mode
 	if (PMC_REGSC & PMC_REGSC_ACKISO) PMC_REGSC |= PMC_REGSC_ACKISO;
@@ -1005,6 +1019,7 @@ void ResetHandler(void)
 	_init_Teensyduino_internal_();
 
 #if defined(KINETISK)
+#ifndef SKIP_RTC_OSC
 	// RTC initialization
 	if (RTC_SR & RTC_SR_TIF) {
 		// this code will normally run on a power-up reset
@@ -1034,6 +1049,7 @@ void ResetHandler(void)
 		#endif
 		*(uint32_t *)0x4003E01C = 0;
 	}
+#endif
 #endif
 
 	__libc_init_array();
