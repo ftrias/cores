@@ -259,10 +259,12 @@ static void usb_setup(void)
 			table[index(i, TX, EVEN)].desc = 0;
 			table[index(i, TX, ODD)].desc = 0;
 #ifdef AUDIO_INTERFACE
+#ifdef AUDIO_SYNC_ENDPOINT
 			if (i == AUDIO_SYNC_ENDPOINT) {
 				table[index(i, TX, EVEN)].addr = &usb_audio_sync_feedback;
 				table[index(i, TX, EVEN)].desc = (3<<16) | BDT_OWN;
 			}
+#endif
 #endif
 		}
 		break;
@@ -580,6 +582,10 @@ static void usb_control(uint32_t stat)
 	case 0x01:  // OUT transaction received from host
 	case 0x02:
 		//serial_print("PID=OUT\n");
+		if (setup.wRequestAndType == 0x2021) {
+			if (buf[0] == 134) usb_reboot_timer = 15;
+			endpoint0_transmit(NULL, 0);
+		}
 #ifdef CDC_STATUS_INTERFACE
 		if (setup.wRequestAndType == 0x2021 /*CDC_SET_LINE_CODING*/) {
 			int i;
@@ -844,6 +850,11 @@ void _reboot_Teensyduino_(void)
 	__asm__ volatile("bkpt");
 }
 
+void usb_default_reboot_hook(void) { 
+	_reboot_Teensyduino_();
+}
+void usb_reboot_hook(void) __attribute__ ((weak, alias("usb_default_reboot_hook")));
+
 
 void usb_isr(void)
 {
@@ -861,7 +872,8 @@ void usb_isr(void)
 			t = usb_reboot_timer;
 			if (t) {
 				usb_reboot_timer = --t;
-				if (!t) _reboot_Teensyduino_();
+				//if (!t) _reboot_Teensyduino_();
+				if (!t) usb_reboot_hook();
 			}
 #ifdef CDC_DATA_INTERFACE
 			t = usb_cdc_transmit_flush_timer;
@@ -929,11 +941,13 @@ void usb_isr(void)
 				usb_audio_receive_callback(b->desc >> 16);
 				b->addr = usb_audio_receive_buffer;
 				b->desc = (AUDIO_RX_SIZE << 16) | BDT_OWN;
+#ifdef AUDIO_SYNC_ENDPOINT
 			} else if ((endpoint == AUDIO_SYNC_ENDPOINT-1) && (stat & 0x08)) {
 				b = (bdt_t *)((uint32_t)b ^ 8);
 				b->addr = &usb_audio_sync_feedback;
 				b->desc = (3 << 16) | BDT_OWN;
 				tx_state[endpoint] ^= 1;
+#endif
 			} else
 #endif
 			if (stat & 0x08) { // transmit
@@ -1085,14 +1099,18 @@ void usb_isr(void)
 	if ((status & USB_ISTAT_SLEEP /* 10 */ )) {
 		//serial_print("sleep\n");
 		USB0_ISTAT = USB_ISTAT_SLEEP;
+		usb_configuration = 0;
 	}
 
 }
 
-
+void usb_default_early_hook(void) { }
+void usb_early_hook(void) __attribute__ ((weak, alias("usb_default_early_hook")));
 
 void usb_init(void)
 {
+	usb_early_hook();
+
 	int i;
 
 	//serial_begin(BAUD2DIV(115200));
