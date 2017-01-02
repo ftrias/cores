@@ -43,7 +43,11 @@
 #include "kinetis.h"
 //#include "HardwareSerial.h"
 #include "usb_mem.h"
+<<<<<<< HEAD
 #include <string.h> // for memset
+=======
+#include "usb_audio.h"
+>>>>>>> Headers to remove gcc complaints
 
 // buffer descriptor table
 
@@ -839,7 +843,6 @@ void _reboot_Teensyduino_(void)
 	// TODO: initialize R0 with a code....
 	__asm__ volatile("bkpt");
 }
-
 
 
 void usb_isr(void)
