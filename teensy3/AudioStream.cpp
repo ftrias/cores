@@ -108,11 +108,10 @@ audio_block_t * AudioStream::allocate(void)
 // returned to the free pool
 void AudioStream::release(audio_block_t *block)
 {
-	if (block==NULL) return; // add by FT
+	if (block==NULL) return;
 
 	uint32_t mask = (0x80000000 >> (31 - (block->memory_pool_index & 0x1F)));
 	uint32_t index = block->memory_pool_index >> 5;
-
 
 	__disable_irq();
 	if (block->ref_count > 1) {
