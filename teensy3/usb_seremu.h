@@ -133,4 +133,8 @@ extern void serialEvent(void);
 
 #endif // SEREMU_INTERFACE
 
+#ifdef SERIAL_FAKE
+#include "usb_seremu_fake.h"
+#endif // SERIAL_FAKE
+
 #endif // USBseremu_h_
