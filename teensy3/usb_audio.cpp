@@ -87,6 +87,17 @@ static void simple_copy_to_buffers(const uint32_t *src, int16_t *left, int16_t *
 #endif
 
 #if 0
+static void simple_copy_to_buffers(const uint32_t *src, int16_t *left, int16_t *right, unsigned int len)
+{
+	int16_t *data = (int16_t*)src;
+	while(len--) {
+		*left++ = *data++;
+		*right++ = *data++;
+	}
+}
+#endif
+
+#if 0
 static void copy_to_buffers(const uint32_t *src, int16_t *left, int16_t *right, unsigned int len)
 {
         __asm(

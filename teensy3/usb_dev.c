@@ -44,10 +44,14 @@
 //#include "HardwareSerial.h"
 #include "usb_mem.h"
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include <string.h> // for memset
 =======
 #include "usb_audio.h"
 >>>>>>> Headers to remove gcc complaints
+=======
+#include "usb_audio.h"
+>>>>>>> FETCH_HEAD
 
 // buffer descriptor table
 
