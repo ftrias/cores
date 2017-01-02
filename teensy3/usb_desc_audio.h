@@ -41,7 +41,7 @@
   #define AUDIO_TX_SIZE         180
   #define AUDIO_RX_ENDPOINT     8
   #define AUDIO_RX_SIZE         180
-  //#define AUDIO_SYNC_ENDPOINT   9
+  #define AUDIO_SYNC_ENDPOINT   9
 
   #define ENDPOINT1_CONFIG      ENDPOINT_TRANSIMIT_ONLY
   #define ENDPOINT2_CONFIG      ENDPOINT_RECEIVE_ONLY
