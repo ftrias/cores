@@ -6,7 +6,7 @@
   #define PRODUCT_NAME          {'V','i','n','d','o','r'}
   #define PRODUCT_NAME_LEN      6
   #define EP0_SIZE              64
-  #define NUM_ENDPOINTS         8
+  #define NUM_ENDPOINTS         9
   #define NUM_USB_BUFFERS       30
   #define NUM_INTERFACE         7
 
