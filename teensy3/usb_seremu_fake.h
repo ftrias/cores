@@ -28,7 +28,7 @@ public:
         operator bool() { return true; }
 };
 
-extern volatile int usb_configuration;
+// extern "C" volatile uint8_t usb_configuration;
 extern usb_seremu_class Serial;
 extern void serialEvent(void);
 #endif
