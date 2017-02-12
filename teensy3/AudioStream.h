@@ -37,6 +37,23 @@
 #include "kinetis.h"
 #endif
 
+#ifndef __ASSEMBLER__
+
+class Once {
+public:
+	volatile int *state;
+	Once(volatile int &flag) {
+		state = &flag;
+		if (*state) __asm volatile("bkpt");
+		*state = 1;
+	}
+	~Once() { *state = 0;}
+};
+
+#define ONCE static volatile int onceflag; Once onceclass(onceflag);
+
+#endif
+
 // AUDIO_BLOCK_SAMPLES determines how many samples the audio library processes
 // per update.  It may be reduced to achieve lower latency response to events,
 // at the expense of higher interrupt and DMA setup overhead.
@@ -62,11 +79,15 @@ class AudioStream;
 class AudioConnection;
 
 typedef struct audio_block_struct {
-	unsigned char ref_count;
+	int ref_count;
 	unsigned char memory_pool_index;
 	unsigned char reserved1;
 	unsigned char reserved2;
 	int16_t data[AUDIO_BLOCK_SAMPLES];
+	uint32_t debug;
+	int line;
+	int time;
+	uint32_t memory_pool_mask;
 } audio_block_t;
 
 
@@ -132,6 +153,7 @@ public:
 			cpu_cycles_max = 0;
 		}
 	static void initialize_memory(audio_block_t *data, unsigned int num);
+	static void check_memory();
 	int processorUsage(void) { return CYCLE_COUNTER_APPROX_PERCENT(cpu_cycles); }
 	int processorUsageMax(void) { return CYCLE_COUNTER_APPROX_PERCENT(cpu_cycles_max); }
 	void processorUsageMaxReset(void) { cpu_cycles_max = cpu_cycles; }
@@ -144,7 +166,7 @@ public:
 protected:
 	bool active;
 	unsigned char num_inputs;
-	static audio_block_t * allocate(void);
+	static audio_block_t * allocate(int db =0);
 	static void release(audio_block_t * block);
 	void transmit(audio_block_t *block, unsigned char index = 0);
 	audio_block_t * receiveReadOnly(unsigned int index = 0);

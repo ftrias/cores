@@ -139,7 +139,6 @@ uint8_t usb_rx_memory_needed = 0;
 volatile uint8_t usb_configuration = 0;
 volatile uint8_t usb_reboot_timer = 0;
 
-
 static void endpoint0_stall(void)
 {
 	USB0_ENDPT0 = USB_ENDPT_EPSTALL | USB_ENDPT_EPRXEN | USB_ENDPT_EPTXEN | USB_ENDPT_EPHSHK;
@@ -229,9 +228,9 @@ static void usb_setup(void)
 			reg += 4;
 #ifdef AUDIO_INTERFACE
 			if (i == AUDIO_RX_ENDPOINT) {
-				table[index(i, RX, EVEN)].addr = usb_audio_receive_buffer;
+				table[index(i, RX, EVEN)].addr = usb_audio_receive_buffer1;
 				table[index(i, RX, EVEN)].desc = (AUDIO_RX_SIZE<<16) | BDT_OWN;
-				table[index(i, RX, ODD)].addr = usb_audio_receive_buffer;
+				table[index(i, RX, ODD)].addr = usb_audio_receive_buffer2;
 				table[index(i, RX, ODD)].desc = (AUDIO_RX_SIZE<<16) | BDT_OWN;
 			} else
 #endif
@@ -257,12 +256,10 @@ static void usb_setup(void)
 			table[index(i, TX, EVEN)].desc = 0;
 			table[index(i, TX, ODD)].desc = 0;
 #ifdef AUDIO_INTERFACE
-#ifdef AUDIO_SYNC_ENDPOINT
 			if (i == AUDIO_SYNC_ENDPOINT) {
 				table[index(i, TX, EVEN)].addr = &usb_audio_sync_feedback;
 				table[index(i, TX, EVEN)].desc = (3<<16) | BDT_OWN;
 			}
-#endif
 #endif
 		}
 		break;
@@ -853,6 +850,25 @@ void usb_default_reboot_hook(void) {
 }
 void usb_reboot_hook(void) __attribute__ ((weak, alias("usb_default_reboot_hook")));
 
+long long usb_audio_sync_sof;
+long long usb_audio_sync_sof_last;
+extern uint32_t systick_millis_count;
+
+long long cpu_ticks(void)
+{
+	    uint32_t count, current, istatus;
+	    long long ticks;
+
+        __disable_irq();
+        count = systick_millis_count;
+        current = SYST_CVR;
+        istatus = SCB_ICSR;     // bit 26 indicates if systick exception pending
+        if (istatus & SCB_ICSR_PENDSTSET) count++;
+        ticks = SYST_RVR * count + (SYST_RVR - current);
+        __enable_irq();
+        return ticks;
+}
+
 
 void usb_isr(void)
 {
@@ -866,6 +882,9 @@ void usb_isr(void)
 	status = USB0_ISTAT;
 
 	if ((status & USB_ISTAT_SOFTOK /* 04 */ )) {
+		usb_audio_sync_sof_last = usb_audio_sync_sof;
+		usb_audio_sync_sof = cpu_ticks();
+
 		if (usb_configuration) {
 			t = usb_reboot_timer;
 			if (t) {
@@ -936,16 +955,21 @@ void usb_isr(void)
 					tx_state[endpoint] ^= 1;
 				}
 			} else if ((endpoint == AUDIO_RX_ENDPOINT-1) && !(stat & 0x08)) {
+				if (stat & 0b100) {
+					usb_audio_receive_buffer = usb_audio_receive_buffer2;
+				}
+				else {
+					usb_audio_receive_buffer = usb_audio_receive_buffer1;
+				}
 				usb_audio_receive_callback(b->desc >> 16);
-				b->addr = usb_audio_receive_buffer;
+				// b->addr = usb_audio_receive_buffer;
 				b->desc = (AUDIO_RX_SIZE << 16) | BDT_OWN;
-#ifdef AUDIO_SYNC_ENDPOINT
 			} else if ((endpoint == AUDIO_SYNC_ENDPOINT-1) && (stat & 0x08)) {
+				usb_audio_feedback_callback();
 				b = (bdt_t *)((uint32_t)b ^ 8);
 				b->addr = &usb_audio_sync_feedback;
 				b->desc = (3 << 16) | BDT_OWN;
 				tx_state[endpoint] ^= 1;
-#endif
 			} else
 #endif
 			if (stat & 0x08) { // transmit
@@ -1099,7 +1123,6 @@ void usb_isr(void)
 		USB0_ISTAT = USB_ISTAT_SLEEP;
 		usb_configuration = 0;
 	}
-
 }
 
 void usb_default_early_hook(void) { }

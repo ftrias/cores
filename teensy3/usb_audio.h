@@ -9,8 +9,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern uint16_t usb_audio_receive_buffer[];
+extern uint16_t *usb_audio_receive_buffer;
+extern uint16_t usb_audio_receive_buffer1[];
+extern uint16_t usb_audio_receive_buffer2[];
 extern uint16_t usb_audio_transmit_buffer[];
+extern void usb_audio_feedback_callback();
 extern void usb_audio_receive_callback(unsigned int len);
 extern unsigned int usb_audio_transmit_callback(void);
 int usb_audio_set_feature(void *stp, uint8_t *buf);

@@ -534,9 +534,7 @@ static uint8_t flightsim_report_desc[] = {
 
 #define AUDIO_INTERFACE_DESC_POS	KEYMEDIA_INTERFACE_DESC_POS+KEYMEDIA_INTERFACE_DESC_SIZE
 #ifdef  AUDIO_INTERFACE
-#define AUDIO_INTERFACE_DESC_SIZE	8 + 9+10+12+9+12+10+9 + 9+9+7+11+9+7 + 9+9+7+11+9+7+9
-//#define AUDIO_INTERFACE_DESC_SIZE	9+10+12+9+12+10+9 + 9+9+7+11+9+7 + 9+9+7+11+9+7+9
-//#define AUDIO_INTERFACE_DESC_SIZE	9+10+12+9+12+10+9 + 9+9+7+11+9+7 + 9+9+7+11+9+7
+#define AUDIO_INTERFACE_DESC_SIZE	8 + 9+10+12+9+12+10+9 + 9+9+7+11+9+7 + 9+9+7+11+9+7 +9
 #else
 #define AUDIO_INTERFACE_DESC_SIZE	0
 #endif
@@ -1155,7 +1153,7 @@ static uint8_t config_descriptor[CONFIG_DESC_SIZE] = {
 	4,					// bDescriptorType = INTERFACE
 	AUDIO_INTERFACE+2,			// bInterfaceNumber
 	1,					// bAlternateSetting
-	1,					// bNumEndpoints
+	2,					// bNumEndpoints
 	1,					// bInterfaceClass, 1 = AUDIO
 	2,					// bInterfaceSubclass, 2 = AUDIO_STREAMING
 	0,					// bInterfaceProtocol
@@ -1202,6 +1200,7 @@ static uint8_t config_descriptor[CONFIG_DESC_SIZE] = {
 	9, 					// bLength
 	5, 					// bDescriptorType, 5 = ENDPOINT_DESCRIPTOR
 	AUDIO_SYNC_ENDPOINT | 0x80,		// bEndpointAddress
+        // below should be 1? FT
 	0x11, 					// bmAttributes = isochronous, feedback
 	3, 0,					// wMaxPacketSize, 3 bytes
 	1,			 		// bInterval, 1 = every frame
