@@ -1,6 +1,38 @@
-#ifdef USB_AUDIO_MIDI_KEYBOARD
+#ifdef USB_AUDIO_MIDI
   #define SERIAL_FAKE
 
+  #define VENDOR_ID             0x1209
+  #define PRODUCT_ID            0x4222
+  #define MANUFACTURER_NAME     {'V','i','n','d','o','r',' ','M','u','s','i','c',',',' ','I','n','c','.'}
+  #define MANUFACTURER_NAME_LEN 18
+  #define PRODUCT_NAME          {'V','i','n','d','o','r'}
+  #define PRODUCT_NAME_LEN      6
+  #define EP0_SIZE              64
+  #define NUM_ENDPOINTS         7
+  #define NUM_USB_BUFFERS       20
+  #define NUM_INTERFACE         4
+
+  #define MIDI_INTERFACE        0       // MIDI
+  #define MIDI_TX_ENDPOINT      1
+  #define MIDI_TX_SIZE          64
+  #define MIDI_RX_ENDPOINT      2
+  #define MIDI_RX_SIZE          64
+
+  #define AUDIO_INTERFACE       1       // Audio (uses 3 consecutive interfaces)
+  #define AUDIO_TX_ENDPOINT     3
+  #define AUDIO_TX_SIZE         180
+  #define AUDIO_RX_ENDPOINT     4
+  #define AUDIO_RX_SIZE         180
+  #define AUDIO_SYNC_ENDPOINT   5
+
+  #define ENDPOINT1_CONFIG      ENDPOINT_TRANSIMIT_ONLY
+  #define ENDPOINT2_CONFIG      ENDPOINT_RECEIVE_ONLY
+  #define ENDPOINT3_CONFIG      ENDPOINT_TRANSMIT_ISOCHRONOUS
+  #define ENDPOINT4_CONFIG      ENDPOINT_RECEIVE_ISOCHRONOUS
+  #define ENDPOINT5_CONFIG      ENDPOINT_TRANSMIT_ISOCHRONOUS
+#endif
+
+#ifdef USB_AUDIO_MIDI_KEYBOARD
   #define VENDOR_ID             0x1209
   #define PRODUCT_ID            0x4220
   #define MANUFACTURER_NAME     {'V','i','n','d','o','r',' ','M','u','s','i','c',',',' ','I','n','c','.'}
@@ -8,7 +40,7 @@
   #define PRODUCT_NAME          {'V','i','n','d','o','r'}
   #define PRODUCT_NAME_LEN      6
   #define EP0_SIZE              64
-  #define NUM_ENDPOINTS         7
+  #define NUM_ENDPOINTS         6
   #define NUM_USB_BUFFERS       30
   #define NUM_INTERFACE         6
 
@@ -44,10 +76,9 @@
   #define ENDPOINT7_CONFIG      ENDPOINT_TRANSMIT_ISOCHRONOUS
 #endif
 
-
-#ifdef USB_AUDIO_MIDI_KEYBOARD_2
-  #define VENDOR_ID             0x16C0
-  #define PRODUCT_ID            0x0485
+#ifdef USB_AUDIO_MIDI_KEYBOARD_SEREMU
+  #define VENDOR_ID             0x1209
+  #define PRODUCT_ID            0x4221
   #define MANUFACTURER_NAME     {'V','i','n','d','o','r',' ','M','u','s','i','c',',',' ','I','n','c','.'}
   #define MANUFACTURER_NAME_LEN 18
   #define PRODUCT_NAME          {'V','i','n','d','o','r'}
