@@ -696,6 +696,197 @@ static void startup_default_late_hook(void) {}
 void startup_early_hook(void)		__attribute__ ((weak, alias("startup_default_early_hook")));
 void startup_late_hook(void)		__attribute__ ((weak, alias("startup_default_late_hook")));
 
+void ResetHandler_NEW(void)
+{
+	uint32_t *src = &_etext;
+	uint32_t *dest = &_sdata;
+	unsigned int i;
+	//volatile int count;
+
+	WDOG_UNLOCK = WDOG_UNLOCK_SEQ1;
+	WDOG_UNLOCK = WDOG_UNLOCK_SEQ2;
+	__asm__ volatile ("nop");
+	__asm__ volatile ("nop");
+
+	// programs using the watchdog timer or needing to initialize hardware as
+	// early as possible can implement startup_early_hook()
+	startup_early_hook();
+
+	// enable clocks to always-used peripherals
+	SIM_SCGC3 = SIM_SCGC3_ADC1 | SIM_SCGC3_FTM2;
+	SIM_SCGC5 = 0x00043F82;		// clocks active to all GPIO
+	SIM_SCGC6 = SIM_SCGC6_RTC | SIM_SCGC6_FTM0 | SIM_SCGC6_FTM1 | SIM_SCGC6_ADC0 | SIM_SCGC6_FTFL;
+
+	// release I/O pins hold, if we woke up from VLLS mode
+	if (PMC_REGSC & PMC_REGSC_ACKISO) PMC_REGSC |= PMC_REGSC_ACKISO;
+
+    // since this is a write once register, make it visible to all F_CPU's
+    // so we can into other sleep modes in the future at any speed
+	SMC_PMPROT = SMC_PMPROT_AVLP | SMC_PMPROT_ALLS | SMC_PMPROT_AVLLS;
+    
+	// TODO: do this while the PLL is waiting to lock....
+	while (dest < &_edata) *dest++ = *src++;
+	dest = &_sbss;
+	while (dest < &_ebss) *dest++ = 0;
+
+	// default all interrupts to medium priority level
+	for (i=0; i < NVIC_NUM_INTERRUPTS + 16; i++) _VectorsRam[i] = _VectorsFlash[i];
+	for (i=0; i < NVIC_NUM_INTERRUPTS; i++) NVIC_SET_PRIORITY(i, 128);
+	SCB_VTOR = (uint32_t)_VectorsRam;	// use vector table in RAM
+
+#define USE_EXTERNAL_CRYSTAL
+#ifdef USE_EXTERNAL_CRYSTAL
+	// hardware always starts in FEI mode
+	//  C1[CLKS] bits are written to 00
+	//  C1[IREFS] bit is written to 1
+	//  C6[PLLS] bit is written to 0
+// MCG_SC[FCDIV] defaults to divide by two for internal ref clock
+// I tried changing MSG_SC to divide by 1, it didn't work for me
+    // enable capacitors for crystal
+    OSC0_CR = OSC_SC8P | OSC_SC2P | OSC_ERCLKEN;
+	// enable osc, 8-32 MHz range, low power mode
+	MCG_C2 = MCG_C2_RANGE0(2) | MCG_C2_EREFS;
+	// switch to crystal as clock source, FLL input = 16 MHz / 512
+	MCG_C1 =  MCG_C1_CLKS(2) | MCG_C1_FRDIV(4);
+	// wait for crystal oscillator to begin
+	while ((MCG_S & MCG_S_OSCINIT0) == 0) ;
+	// wait for FLL to use oscillator
+	while ((MCG_S & MCG_S_IREFST) != 0) ;
+	// wait for MCGOUT to use oscillator
+	while ((MCG_S & MCG_S_CLKST_MASK) != MCG_S_CLKST(2)) ;
+
+	// now in FBE mode
+	//  C1[CLKS] bits are written to 10
+	//  C1[IREFS] bit is written to 0
+	//  C1[FRDIV] must be written to divide xtal to 31.25-39 kHz
+	//  C6[PLLS] bit is written to 0
+	//  C2[LP] is written to 0
+ 
+	// if we need faster than the crystal, turn on the PLL
+    #if F_CPU == 72000000
+	MCG_C5 = MCG_C5_PRDIV0(5);		 // config PLL input for 16 MHz Crystal / 6 = 2.667 Hz
+    #else
+	MCG_C5 = MCG_C5_PRDIV0(3);		 // config PLL input for 16 MHz Crystal / 4 = 4 MHz
+    #endif
+
+    #if F_CPU == 72000000
+	MCG_C6 = MCG_C6_PLLS | MCG_C6_VDIV0(3); // config PLL for 72 MHz output
+    #elif F_CPU == 96000000 || F_CPU == 48000000 || F_CPU == 24000000
+	MCG_C6 = MCG_C6_PLLS | MCG_C6_VDIV0(0); // config PLL for 96 MHz output
+    #elif F_CPU > 16000000
+    #error "This clock speed isn't supported..."
+    #endif
+ 
+	// wait for PLL to start using xtal as its input
+	while (!(MCG_S & MCG_S_PLLST)) ;
+	// wait for PLL to lock
+	while (!(MCG_S & MCG_S_LOCK0)) ;
+	// now we're in PBE mode
+
+	// now program the clock dividers
+#if F_CPU == 96000000
+	// config divisors: 96 MHz core, 48 MHz bus, 24 MHz flash, USB = 96 / 2
+	#if F_BUS == 48000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(1) | SIM_CLKDIV1_OUTDIV4(3);
+	#elif F_BUS == 96000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(0) | SIM_CLKDIV1_OUTDIV4(3);
+	#else
+	#error "This F_CPU & F_BUS combination is not supported"
+	#endif
+	SIM_CLKDIV2 = SIM_CLKDIV2_USBDIV(1);
+#elif F_CPU == 72000000
+	// config divisors: 72 MHz core, 36 MHz bus, 24 MHz flash, USB = 72 * 2 / 3
+	#if F_BUS == 36000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(1) | SIM_CLKDIV1_OUTDIV4(2);
+	#elif F_BUS == 72000000
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) | SIM_CLKDIV1_OUTDIV2(0) | SIM_CLKDIV1_OUTDIV4(2);
+	#else
+	#error "This F_CPU & F_BUS combination is not supported"
+	#endif
+	SIM_CLKDIV2 = SIM_CLKDIV2_USBDIV(2) | SIM_CLKDIV2_USBFRAC;
+#endif
+
+	// switch to PLL as clock source, FLL input = 16 MHz / 512
+	MCG_C1 = MCG_C1_CLKS(0) | MCG_C1_FRDIV(4);
+	// wait for PLL clock to be used
+	while ((MCG_S & MCG_S_CLKST_MASK) != MCG_S_CLKST(3)) ;
+
+	// now we're in PEE mode
+	// USB uses PLL clock, trace is CPU clock, CLKOUT=OSCERCLK0
+	SIM_SOPT2 = SIM_SOPT2_USBSRC | SIM_SOPT2_PLLFLLSEL | SIM_SOPT2_TRACECLKSEL | SIM_SOPT2_CLKOUTSEL(6);
+
+#else
+
+	/* System clock initialization */
+	/* SIM_CLKDIV1: OUTDIV1=0,OUTDIV2=1,??=0,??=0,??=0,??=0,OUTDIV4=3,??=0,??=0,??=0,??=0,??=0,??=0,??=0,??=0,??=0,??=0,??=0,??=0,??=0,??=0,??=0,??=0 */
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0x00) |
+	            SIM_CLKDIV1_OUTDIV2(0x01) |
+	            SIM_CLKDIV1_OUTDIV4(0x03); /* Set the system prescalers to safe value */
+	if ((PMC_REGSC & PMC_REGSC_ACKISO) != 0x0U) {
+		/* PMC_REGSC: ACKISO=1 */
+		PMC_REGSC |= PMC_REGSC_ACKISO; /* Release IO pads after wakeup from VLLS mode. */
+	}
+	/* SIM_CLKDIV1: OUTDIV1=0,OUTDIV2=0,??=0,??=0,??=0,??=0,OUTDIV4=1,??=0,??=0,??=0,??=0,??=0,??=0,??=0,??=0,??=0,??=0,??=0,??=0,??=0,??=0,??=0,??=0 */
+	SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0x00) |
+	            SIM_CLKDIV1_OUTDIV2(0x01) |
+	            SIM_CLKDIV1_OUTDIV4(0x05); /* Update system prescalers */
+	/* SIM_SOPT2: PLLFLLSEL=0 */
+	SIM_SOPT2 &= (uint32_t)~(uint32_t)(SIM_SOPT2_PLLFLLSEL); /* Select FLL as a clock source for various peripherals */
+	/* SIM_SOPT1: OSC32KSEL=3 */
+	SIM_SOPT1 |= SIM_SOPT1_OSC32KSEL(0x03); /* LPO 1kHz oscillator drives 32 kHz clock for various peripherals */
+	/* Switch to FEI Mode */
+	/* MCG_C1: CLKS=0,FRDIV=0,IREFS=1,IRCLKEN=1,IREFSTEN=0 */
+	MCG_C1 = MCG_C1_CLKS(0x00) |
+	       MCG_C1_FRDIV(0x00) |
+	       MCG_C1_IREFS |
+	       MCG_C1_IRCLKEN;
+	/* MCG_C2: LOCRE0=0,??=0,RANGE0=0,HGO0=0,EREFS0=0,LP=0,IRCS=0 */
+	MCG_C2 = MCG_C2_RANGE0(0x00);
+	/* MCG_C4: DMX32=0,DRST_DRS=0 */
+	MCG_C4 &= (uint8_t)~(uint8_t)((MCG_C4_DMX32 | MCG_C4_DRST_DRS(0x03)));
+	/* OSC_CR: ERCLKEN=1,??=0,EREFSTEN=0,??=0,SC2P=0,SC4P=0,SC8P=0,SC16P=0 */
+	OSC0_CR = 0;
+	/* MCG_C7: OSCSEL=0 */
+	MCG_C7 &= (uint8_t)~(uint8_t)(1);
+	/* MCG_C5: ??=0,PLLCLKEN0=0,PLLSTEN0=0,PRDIV0=0 */
+	MCG_C5 = MCG_C5_PRDIV0(0x00);
+	/* MCG_C6: LOLIE0=0,PLLS=0,CME0=0,VDIV0=0 */
+	MCG_C6 = MCG_C6_VDIV0(0x00);
+	while((MCG_S & MCG_S_IREFST) == 0x00U) { /* Check that the source of the FLL reference clock is the internal reference clock. */
+	}
+	while((MCG_S & 0x0CU) != 0x00U) {    /* Wait until output of the FLL is selected */
+	}
+
+	// USB uses FLL clock, trace is CPU clock, CLKOUT=OSCERCLK0
+	SIM_SOPT2 |= SIM_SOPT2_USBSRC | SIM_SOPT2_TRACECLKSEL | SIM_SOPT2_CLKOUTSEL(6);
+  	
+  	SIM_CLKDIV2 = (uint32_t)((SIM_CLKDIV2 & (uint32_t)~(uint32_t)(
+                 SIM_CLKDIV2_USBDIV(0x06) |
+                 SIM_CLKDIV2_USBFRAC
+                 )) | (uint32_t)(
+                 SIM_CLKDIV2_USBDIV(0x01)
+                 ));
+	SIM_SOPT1 |= 0x80U;                  /* Enable USB voltage regulator */
+
+#endif
+
+	// initialize the SysTick counter
+	SYST_RVR = (F_CPU / 1000) - 1;
+	SYST_CVR = 0;
+	SYST_CSR = SYST_CSR_CLKSOURCE | SYST_CSR_TICKINT | SYST_CSR_ENABLE;
+	SCB_SHPR3 = 0x20200000;  // Systick = priority 32
+
+	//init_pins();
+	__enable_irq();
+
+	_init_Teensyduino_internal_();
+
+	__libc_init_array();
+
+	startup_late_hook();
+	main();
+	while (1) ;
+}
 
 #ifdef __clang__
 // Clang seems to generate slightly larger code with Os than gcc
