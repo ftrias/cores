@@ -852,7 +852,7 @@ void usb_reboot_hook(void) __attribute__ ((weak, alias("usb_default_reboot_hook"
 
 long long usb_audio_sync_sof;
 long long usb_audio_sync_sof_last;
-extern uint32_t systick_millis_count;
+extern volatile uint32_t systick_millis_count;
 
 long long cpu_ticks(void)
 {
