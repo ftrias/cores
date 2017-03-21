@@ -41,9 +41,7 @@ uint16_t AudioStream::cpu_cycles_total_max = 0;
 uint8_t AudioStream::memory_used = 0;
 uint8_t AudioStream::memory_used_max = 0;
 
-unsigned int memory_pool_num;
 
-int onceflag;
 
 // Set up the pool of audio data blocks
 // placing them all onto the free list
@@ -64,72 +62,22 @@ void AudioStream::initialize_memory(audio_block_t *data, unsigned int num)
 	}
 	for (i=0; i < num; i++) {
 		data[i].memory_pool_index = i;
-		data[i].debug = 0xFFFFFFFF;
-		data[i].time = 0;
-		data[i].memory_pool_mask = (1 << (i & 0x1F));
-		data[i].ref_count = 0;
 	}
-	memory_pool_num = num;
 	__enable_irq();
 
 }
 
-extern uint32_t systick_millis_count;
-
-void AudioStream::check_memory()
-{
-	audio_block_t *block;
-	int now = systick_millis_count;
-	for (unsigned int i=0; i < memory_pool_num; i++) {
-		block = &memory_pool[i];
-
-		uint32_t mask = (0x80000000 >> (31 - (block->memory_pool_index & 0x1F)));
-		uint32_t index = block->memory_pool_index >> 5;
-
-		if (block->debug != 0xFFFFFFFF) {
-			block->debug = 0xFFFFFFFF;
-		}
-		
-		if (block->ref_count < 0) {
-			block->ref_count = 0;
-			block->debug = 0xFFFFFFFF;
-		}
-		
-		if ((block->ref_count > 0)) {	
-			if (block->time && now - block->time > 20) {
-				block->ref_count = 0;
-				block->debug = 0xFFFFFFFF;
-			}
-			if ((memory_pool_available_mask[index] & mask) == mask) {
-				memory_pool_available_mask[index] &= ~mask;
-				block->debug = 0xFFFFFFFF;
-			}
-		}
-		else if (block->ref_count == 0) {
-			if ((memory_pool_available_mask[index] & mask) != mask) {
-				if (block->time && now - block->time > 10) {
-					memory_pool_available_mask[index] |= mask;
-				}
-				block->debug = 0xFFFFFFFF;
-			}
-			continue;
-		}
-	}
-}
-
 // Allocate 1 audio data block.  If successful
 // the caller is the only owner of this new block
-audio_block_t * AudioStream::allocate(int db)
+audio_block_t * AudioStream::allocate(void)
 {
-	uint32_t n, index, avail, num;
+	uint32_t n, index, avail;
 	uint32_t *p;
 	audio_block_t *block;
 	uint8_t used;
 
 	p = memory_pool_available_mask;
 	__disable_irq();
-	{Once o(onceflag);
-	check_memory();
 	do {
 		avail = *p; if (avail) break;
 		p++; avail = *p; if (avail) break;
@@ -142,24 +90,13 @@ audio_block_t * AudioStream::allocate(int db)
 		return NULL;
 	} while (0);
 	n = __builtin_clz(avail);
-
-	index = p - memory_pool_available_mask;
-	num = ((index << 5) + (31 - n));
-	if (num >= memory_pool_num) {
-		__enable_irq();
-		return NULL;
-	}
-
 	*p = avail & ~(0x80000000 >> n);
 	used = memory_used + 1;
 	memory_used = used;
-	}__enable_irq();
-	
-	block = memory_pool + num;
-	// if (block->ref_count != 0) __asm volatile("bkpt");
+	__enable_irq();
+	index = p - memory_pool_available_mask;
+	block = memory_pool + ((index << 5) + (31 - n));
 	block->ref_count = 1;
-	block->line = db;
-	block->time = systick_millis_count;
 	if (used > memory_used_max) memory_used_max = used;
 	//Serial.print("alloc:");
 	//Serial.println((uint32_t)block, HEX);
@@ -171,26 +108,20 @@ audio_block_t * AudioStream::allocate(int db)
 // returned to the free pool
 void AudioStream::release(audio_block_t *block)
 {
-	if (block==NULL) return;
+	uint32_t mask = (0x80000000 >> (31 - (block->memory_pool_index & 0x1F)));
+	uint32_t index = block->memory_pool_index >> 5;
+
 
 	__disable_irq();
-	{Once o(onceflag);
 	if (block->ref_count > 1) {
 		block->ref_count--;
-	} else if (block->ref_count <= 0) {
-		check_memory();
-		block->ref_count = 0;
 	} else {
-		block->ref_count--;
 		//Serial.print("reles:");
 		//Serial.println((uint32_t)block, HEX);
-		uint32_t mask = (0x80000000 >> (31 - (block->memory_pool_index & 0x1F)));
-		uint32_t index = block->memory_pool_index >> 5;
 		memory_pool_available_mask[index] |= mask;
 		memory_used--;
-		// if (mask != block->memory_pool_mask) __asm volatile("bkpt");
 	}
-	}__enable_irq();
+	__enable_irq();
 }
 
 // Transmit an audio data block
@@ -202,8 +133,6 @@ void AudioStream::release(audio_block_t *block)
 // and then release it once after all transmit calls.
 void AudioStream::transmit(audio_block_t *block, unsigned char index)
 {
-	__disable_irq();
-	{Once o(onceflag);
 	for (AudioConnection *c = destination_list; c != NULL; c = c->next_dest) {
 		if (c->src_index == index) {
 			if (c->dst.inputQueue[c->dest_index] == NULL) {
@@ -212,7 +141,6 @@ void AudioStream::transmit(audio_block_t *block, unsigned char index)
 			}
 		}
 	}
-	}__enable_irq();
 }
 
 
@@ -235,22 +163,14 @@ audio_block_t * AudioStream::receiveWritable(unsigned int index)
 	audio_block_t *in, *p;
 
 	if (index >= num_inputs) return NULL;
-	__disable_irq();
 	in = inputQueue[index];
-	int count = in->ref_count;
-	__enable_irq();
-
 	inputQueue[index] = NULL;
-	if (in && count > 1) {
-		p = allocate(__LINE__);
+	if (in && in->ref_count > 1) {
+		p = allocate();
 		if (p) memcpy(p->data, in->data, sizeof(p->data));
-		release(in);
-		// in->ref_count--;
-		// in->line = 999;
-		// if (in->ref_count==0) __asm volatile("bkpt");
+		in->ref_count--;
 		in = p;
 	}
-	// if (in && in->ref_count == 0) __asm volatile("bkpt");
 	return in;
 }
 

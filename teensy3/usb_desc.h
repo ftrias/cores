@@ -204,7 +204,7 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define MOUSE_INTERVAL        1
   #define JOYSTICK_INTERFACE    3	// Joystick
   #define JOYSTICK_ENDPOINT     4
-  #define JOYSTICK_SIZE         16
+  #define JOYSTICK_SIZE         12	//  12 = normal, 64 = extreme joystick
   #define JOYSTICK_INTERVAL     2
   #define ENDPOINT1_CONFIG	ENDPOINT_TRANSIMIT_ONLY
   #define ENDPOINT2_CONFIG	ENDPOINT_RECEIVE_ONLY
@@ -250,7 +250,7 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define MOUSE_INTERVAL        2
   #define JOYSTICK_INTERFACE    4	// Joystick
   #define JOYSTICK_ENDPOINT     6
-  #define JOYSTICK_SIZE         16
+  #define JOYSTICK_SIZE         12	//  12 = normal, 64 = extreme joystick
   #define JOYSTICK_INTERVAL     1
   #define ENDPOINT1_CONFIG	ENDPOINT_TRANSIMIT_ONLY
   #define ENDPOINT2_CONFIG	ENDPOINT_TRANSIMIT_ONLY
@@ -485,7 +485,7 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define SEREMU_RX_INTERVAL    2
   #define JOYSTICK_INTERFACE    2	// Joystick
   #define JOYSTICK_ENDPOINT     5
-  #define JOYSTICK_SIZE         16
+  #define JOYSTICK_SIZE         12	//  12 = normal, 64 = extreme joystick
   #define JOYSTICK_INTERVAL     1
   #define ENDPOINT1_CONFIG	ENDPOINT_TRANSIMIT_ONLY
   #define ENDPOINT2_CONFIG	ENDPOINT_RECEIVE_ONLY
@@ -649,7 +649,7 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define FLIGHTSIM_RX_INTERVAL	1
   #define JOYSTICK_INTERFACE    7	// Joystick
   #define JOYSTICK_ENDPOINT     10
-  #define JOYSTICK_SIZE         16
+  #define JOYSTICK_SIZE         12	//  12 = normal, 64 = extreme joystick
   #define JOYSTICK_INTERVAL     1
 /*
   #define MTP_INTERFACE		8	// MTP Disk

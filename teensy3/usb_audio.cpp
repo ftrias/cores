@@ -49,6 +49,8 @@ audio_block_t * AudioInputUSB::ready_right;
 uint16_t AudioInputUSB::incoming_count;
 uint8_t AudioInputUSB::receive_flag;
 
+int usb_aduio_sync_count_last;
+
 usb_audio_features AudioInputUSB::features;
 
 #define DMABUFATTR __attribute__ ((section(".dmabuffers"), aligned (4)))
@@ -57,24 +59,9 @@ uint16_t usb_audio_receive_buffer2[AUDIO_RX_SIZE/2] DMABUFATTR;
 uint32_t usb_audio_sync_feedback DMABUFATTR;
 uint16_t *usb_audio_receive_buffer;
 
-int usb_aduio_sync_count_lt;
-int usb_aduio_sync_count_44;
-int usb_aduio_sync_count_45;
-int usb_aduio_sync_count_gt;
-int usb_aduio_sync_count_last;
-int usb_aduio_sync_count_samples;
-int usb_aduio_sync_count_packets;
-
-int usb_aduio_sync_count_slow;
-int usb_aduio_sync_count_fast;
-int usb_audio_count_zero;
-int usb_aduio_sync_rate;
-int usb_audio_sync_mem;
-int usb_audio_sync_updates;
-int usb_audio_sync_updates_start;
-int usb_audio_sync_updates_last;
-
 uint8_t usb_audio_receive_setting=0;
+
+static uint32_t feedback_accumulator = 185042824;
 
 class AudioBuffer {
 private:
@@ -107,76 +94,23 @@ AudioBuffer read_buffer;
 
 void AudioInputUSB::begin(void)
 {
-#if 0
 	incoming_count = 0;
 	incoming_left = NULL;
 	incoming_right = NULL;
 	ready_left = NULL;
 	ready_right = NULL;
 	receive_flag = 0;
-#endif
 	// update_responsibility = update_setup();
 	// TODO: update responsibility is tough, partly because the USB
 	// interrupts aren't sychronous to the audio library block size,
 	// but also because the PC may stop transmitting data, which
 	// means we no longer get receive callbacks from usb_dev.
 	update_responsibility = false;
-	usb_audio_sync_feedback = 722602; //722534; // feedback_accumulator >> 8;
+	usb_audio_sync_feedback = feedback_accumulator >> 8;
 }
-
-#if 0
-static void copy_to_buffers(const uint32_t *src, int16_t *left, int16_t *right, unsigned int len)
-{
-	uint32_t *target = (uint32_t*) src + len; 
-	while ((src < target) && (((uintptr_t) left & 0x02) != 0)) {
-		uint32_t n = *src++;
-		*left++ = n & 0xFFFF;
-		*right++ = n >> 16;
-	}
-
-	while ((src < target - 2)) {
-		uint32_t n1 = *src++;
-		uint32_t n = *src++;
-		*(uint32_t *)left = (n1 & 0xFFFF) | ((n & 0xFFFF) << 16);
-		left+=2;
-		*(uint32_t *)right = (n1 >> 16) | ((n & 0xFFFF0000)) ;
-		right+=2;
-	}
-
-	while ((src < target)) {
-		uint32_t n = *src++;
-		*left++ = n & 0xFFFF;
-		*right++ = n >> 16;
-	}
-}
-#endif
 
 void usb_audio_feedback_callback() 
 {
-#if 0
-	if (usb_aduio_sync_count_slow) {
-		usb_audio_sync_feedback += 3;
-		usb_aduio_sync_count_slow--;
-		usb_aduio_sync_count_fast = 0;
-	}
-	else if (usb_aduio_sync_count_fast) {
-		usb_audio_sync_feedback -= 3;
-		usb_aduio_sync_count_fast--;
-	}
-	else {
-		if (usb_aduio_sync_rate > 0) {
-			// if (usb_aduio_sync_rate > 45 || usb_aduio_sync_rate - prate > 2)
-				usb_audio_sync_feedback--;
-		}
-		else if (usb_aduio_sync_rate < 0) {
-			// if (usb_aduio_sync_rate < -45 || usb_aduio_sync_rate - prate < 0)
-				usb_audio_sync_feedback++;
-		}
-	}
-	usb_aduio_sync_rate = 0;
-#endif
-
-#if 1
 	int msize = read_buffer.size();
 	if (msize < AUDIO_BLOCK_SAMPLES * 3) {
 		usb_audio_sync_feedback++;
@@ -184,79 +118,6 @@ void usb_audio_feedback_callback()
 	if (msize > AUDIO_BLOCK_SAMPLES * 5) {
 		usb_audio_sync_feedback--;
 	}
-#endif
-
-
-#if 0	
-	static int usb_audio_sync_feedback_adjust;
-	static uint32_t prate;
-	if (usb_aduio_sync_count_slow) {
-		usb_aduio_sync_count_slow--;
-		usb_audio_sync_feedback_adjust+=3;
-		usb_aduio_sync_count_fast = 0;
-		serial_print("slow\n");
-	}
-	else if (usb_aduio_sync_count_fast) {
-		usb_aduio_sync_count_fast-=3;
-		usb_audio_sync_feedback_adjust--;
-		serial_print("fast\n");
-	}
-	else {
-		if (usb_aduio_sync_rate > 0) {
-			if (usb_aduio_sync_rate > 45 || usb_aduio_sync_rate - prate > 2) {
-				usb_audio_sync_feedback_adjust--;
-				serial_print("+\n");
-			}
-		}
-		else if (usb_aduio_sync_rate < 0) {
-			if (usb_aduio_sync_rate < -45 || usb_aduio_sync_rate - prate < 0) {
-				usb_audio_sync_feedback_adjust++;
-				serial_print("-\n");
-			}
-		}
-	}
-	prate = usb_aduio_sync_rate;
-#endif
-
-#if 0
-	// Send back how many samples the computer should send between every SOF packet (which is approx 1ms).
-	// Returned in 10.14 format (hence all the ">> 14" below).
-	// Formula is: cpu_ticks_per_sof * usb_samples_per_sec / cpu_ticks_per_sec
-	// In a perfect world, the answer is 44.1 packets per SOF cycle (or ~722534 in 10.14 format).
-	// But this is not the case because clocks never run precisely in sync.
-	extern long long usb_audio_sync_sof;
-	extern long long usb_audio_sync_sof_last;
-	uint32_t cpu_ticks_per_sof = usb_audio_sync_sof - usb_audio_sync_sof_last;
-
-	if (cpu_ticks_per_sof < 96500 && cpu_ticks_per_sof > 95500) {
-		const uint32_t usb_audio_sync_clock = 44100; // Actually: F_CPU * MCLK_MULT / MCLK_DIV / 256;
-		// uint32_t usb_audio_sync_clock = F_CPU * 2 / 7; // using original divisors
-
-		const uint32_t cpu_ticks_per_sec = F_CPU;
-		long long x = cpu_ticks_per_sof;
-		x <<= 14;
-		x *= usb_audio_sync_clock;
-		x /= cpu_ticks_per_sec;
-		usb_audio_sync_feedback = x + usb_audio_sync_feedback_adjust;
-	}
-
-	usb_aduio_sync_count_lt = usb_aduio_sync_count_44 = usb_aduio_sync_count_45 = usb_aduio_sync_count_gt = 0;
-	usb_aduio_sync_count_samples = usb_aduio_sync_count_packets = 0;
-	usb_audio_count_zero = 0;
-#endif
-#if 0
-		const uint32_t usb_audio_sync_clock_min = (usb_audio_sync_clock << 14) / 1000; // min samples per packet
-		const uint32_t usb_audio_sync_clock_max = ((usb_audio_sync_clock) << 14) / 1000; // max samples per packet
-		// Get the average number of samples per packet, should be approx 44.1 (in 10.14 format)
-		uint32_t avg_samples_per_packet = (usb_aduio_sync_count_samples << 14) / usb_aduio_sync_count_packets;
-		// Is it in the range of what we want?
-		if (avg_samples_per_packet < usb_audio_sync_clock_min) { // too low, adjust up
-			usb_audio_sync_feedback += 1;
-		}
-		else if (avg_samples_per_packet > usb_audio_sync_clock_max) { // too high, adjust down
-			usb_audio_sync_feedback -= 1;
-		}
-#endif
 
 	if (usb_audio_sync_feedback > 729759) usb_audio_sync_feedback = 729759;
 	else if (usb_audio_sync_feedback < 715306) usb_audio_sync_feedback = 715306;
@@ -271,115 +132,19 @@ void usb_audio_receive_callback(unsigned int len) {
 	read_buffer.add(usb_audio_receive_buffer, len);
 }
 
-#if 0
-void usb_audio_receive_callback(unsigned int len)
-{
-	unsigned int count, avail;
-	audio_block_t *left, *right;
-	const uint32_t *data;
-
-	ONCE
-
-	AudioInputUSB::receive_flag = 1;
-
-	len >>= 2; // 1 sample = 4 bytes: 2 left, 2 right
-	data = (const uint32_t *)usb_audio_receive_buffer;
-
-	usb_aduio_sync_count_last = len;
-	
-	if (len < 44) usb_aduio_sync_count_lt++;
-	else if (len == 44) usb_aduio_sync_count_44++;
-	else if (len == 45) usb_aduio_sync_count_45++;
-	else usb_aduio_sync_count_gt++;
-
-	usb_aduio_sync_count_samples += len;
-	usb_aduio_sync_count_packets++;;
-
-	if (data[0]==0 && data[1]==0 && data[3]==0) {
-		usb_audio_count_zero++;
-	}
-
-	count = AudioInputUSB::incoming_count;
-	left = AudioInputUSB::incoming_left;
-	right = AudioInputUSB::incoming_right;
-	if (left == NULL) {
-		left = AudioStream::allocate(__LINE__);
-		if (left == NULL) return;
-		AudioInputUSB::incoming_left = left;
-	}
-	if (right == NULL) {
-		right = AudioStream::allocate(__LINE__);
-		if (right == NULL) return;
-		AudioInputUSB::incoming_right = right;
-	}
-
-	while (len > 0) {
-		avail = AUDIO_BLOCK_SAMPLES - count;
-		if (len < avail) {
-			copy_to_buffers(data, left->data + count, right->data + count, len);
-			AudioInputUSB::incoming_count = count + len;
-			return;
-		} else if (avail > 0) {
-			copy_to_buffers(data, left->data + count, right->data + count, avail);
-			data += avail;
-			len -= avail;
-			if (AudioInputUSB::ready_left || AudioInputUSB::ready_right) {
-				if (len > 0) {
-				// buffer overrun, PC sending too fast
-					usb_aduio_sync_count_fast = 3;
-					AudioInputUSB::incoming_count = count + avail;
-				}
-				return;
-			}
-			send:
-			__disable_irq();
-			// if (AudioInputUSB::ready_left != NULL) __asm volatile("bkpt");
-			// if (AudioInputUSB::ready_right != NULL) __asm volatile("bkpt");
-			AudioInputUSB::ready_left = left;
-			AudioInputUSB::ready_right = right;
-			__enable_irq();
-			//if (AudioInputUSB::update_responsibility) AudioStream::update_all();
-			left = AudioStream::allocate(__LINE__);
-			if (left == NULL) {
-				AudioInputUSB::incoming_left = NULL;
-				AudioInputUSB::incoming_right = NULL;
-				AudioInputUSB::incoming_count = 0;
-				return;
-			}
-			right = AudioStream::allocate(__LINE__);
-			if (right == NULL) {
-				AudioStream::release(left);
-				AudioInputUSB::incoming_left = NULL;
-				AudioInputUSB::incoming_right = NULL;
-				AudioInputUSB::incoming_count = 0;
-				return;
-			}
-			AudioInputUSB::incoming_left = left;
-			AudioInputUSB::incoming_right = right;
-			count = 0;
-		} else {
-			if (AudioInputUSB::ready_left || AudioInputUSB::ready_right) return;
-			goto send; // recover from buffer overrun
-		}
-	}
-	AudioInputUSB::incoming_count = count;
-}
-#endif
-
 void AudioInputUSB::update(void)
 {
 	audio_block_t *left, *right;
 
 	if (read_buffer.size() < AUDIO_BLOCK_SAMPLES * 2) {
-		usb_aduio_sync_count_slow++;
 		return;
 	}
 
-	left = allocate(__LINE__);
+	left = allocate();
 	if (left==NULL) {
 		return;
 	}
-	right = allocate(__LINE__);
+	right = allocate();
 	if (right == NULL) {
 		release(left);
 		return;
@@ -392,52 +157,6 @@ void AudioInputUSB::update(void)
 	transmit(right, 1);
 	release(right);
 }
-
-#if 0
-void AudioInputUSB::update(void)
-{
-	audio_block_t *left, *right;
-
-	ONCE
-
-	__disable_irq();
-	left = ready_left;
-	ready_left = NULL;
-	right = ready_right;
-	ready_right = NULL;
-	uint16_t c = incoming_count;
-	uint8_t f = receive_flag;
-	receive_flag = 0;
-	__enable_irq();
-
-	if (f) {
-		// target pending buffer half full
-		usb_aduio_sync_rate = c - AUDIO_BLOCK_SAMPLES/2;
-		if (!left || !right) {
-			usb_aduio_sync_count_slow=5;
-		}
-	}
-
-	extern uint32_t systick_millis_count;
-	if (usb_audio_sync_updates == 0) usb_audio_sync_updates_start = systick_millis_count;
-	usb_audio_sync_updates++;
-	usb_audio_sync_updates_last = systick_millis_count;
-	usb_audio_sync_mem = AudioMemoryUsage();
-
-	if (left) {
-		transmit(left, 0);
-		release(left);
-	}
-	if (right) {
-		transmit(right, 1);
-		release(right);
-	}
-}
-
-#endif
-
-
-
 
 
 bool AudioOutputUSB::update_responsibility;
@@ -572,6 +291,31 @@ unsigned int usb_audio_transmit_callback(void)
 	}
 	return target * 4;
 }
+
+
+struct setup_struct {
+  union {
+    struct {
+	uint8_t bmRequestType;
+	uint8_t bRequest;
+	union {
+		struct {
+			uint8_t bChannel;  // 0=main, 1=left, 2=right
+			uint8_t bCS;       // Control Selector
+		};
+		uint16_t wValue;
+	};
+	union {
+		struct {
+			uint8_t bIfEp;     // type of entity
+			uint8_t bEntityId; // UnitID, TerminalID, etc.
+		};
+		uint16_t wIndex;
+	};
+	uint16_t wLength;
+    };
+  };
+};
 
 int usb_audio_get_feature(void *stp, uint8_t *data, uint32_t *datalen)
 {

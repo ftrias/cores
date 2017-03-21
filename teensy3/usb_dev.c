@@ -139,6 +139,7 @@ uint8_t usb_rx_memory_needed = 0;
 volatile uint8_t usb_configuration = 0;
 volatile uint8_t usb_reboot_timer = 0;
 
+
 static void endpoint0_stall(void)
 {
 	USB0_ENDPT0 = USB_ENDPT_EPSTALL | USB_ENDPT_EPRXEN | USB_ENDPT_EPTXEN | USB_ENDPT_EPHSHK;

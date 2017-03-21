@@ -25,32 +25,6 @@ extern uint8_t usb_audio_transmit_setting;
 #ifdef __cplusplus
 }
 
-// setup struct definition could be moved from usb_dev.c to usb_dev.h so we can reuse 
-// it instead of redefining it here
-struct setup_struct {
-  union {
-    struct {
-	uint8_t bmRequestType;
-	uint8_t bRequest;
-	union {
-		struct {
-			uint8_t bChannel;  // 0=main, 1=left, 2=right
-			uint8_t bCS;       // Control Selector
-		};
-		uint16_t wValue;
-	};
-	union {
-		struct {
-			uint8_t bIfEp;     // type of entity
-			uint8_t bEntityId; // UnitID, TerminalID, etc.
-		};
-		uint16_t wIndex;
-	};
-	uint16_t wLength;
-    };
-  };
-};
-
 // audio features supported
 class usb_audio_features {
   public:
@@ -79,6 +53,10 @@ public:
 
 	static usb_audio_features features;
 
+	float volume(int channel = 0) {
+		if (features.mute) return 0.0;
+		return (float)(features.volume[channel]) * (1.0 / (float)FEATURE_MAX_VOLUME);
+	}
 private:
 	static bool update_responsibility;
 	static audio_block_t *incoming_left;

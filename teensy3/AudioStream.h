@@ -37,23 +37,6 @@
 #include "kinetis.h"
 #endif
 
-#ifndef __ASSEMBLER__
-
-class Once {
-public:
-	volatile int *state;
-	Once(volatile int &flag) {
-		state = &flag;
-		if (*state) __asm volatile("bkpt");
-		*state = 1;
-	}
-	~Once() { *state = 0;}
-};
-
-#define ONCE static volatile int onceflag; Once onceclass(onceflag);
-
-#endif
-
 // AUDIO_BLOCK_SAMPLES determines how many samples the audio library processes
 // per update.  It may be reduced to achieve lower latency response to events,
 // at the expense of higher interrupt and DMA setup overhead.
@@ -64,30 +47,34 @@ public:
 // Some parts of the audio library may have hard-coded dependency on 128 samples.
 // Please report these on the forum with reproducible test cases.
 
+#ifndef AUDIO_BLOCK_SAMPLES
 #if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
 #define AUDIO_BLOCK_SAMPLES  128
-#define AUDIO_SAMPLE_RATE    44117.64706
-#define AUDIO_SAMPLE_RATE_EXACT 44117.64706 // 48 MHz / 1088, or 96 MHz * 2 / 17 / 256
 #elif defined(__MKL26Z64__)
 #define AUDIO_BLOCK_SAMPLES  64
-#define AUDIO_SAMPLE_RATE    22058.82353
+#endif
+#endif
+
+#ifndef AUDIO_SAMPLE_RATE_EXACT
+#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
+#define AUDIO_SAMPLE_RATE_EXACT 44117.64706 // 48 MHz / 1088, or 96 MHz * 2 / 17 / 256
+#elif defined(__MKL26Z64__)
 #define AUDIO_SAMPLE_RATE_EXACT 22058.82353 // 48 MHz / 2176, or 96 MHz * 1 / 17 / 256
 #endif
+#endif
+
+#define AUDIO_SAMPLE_RATE AUDIO_SAMPLE_RATE_EXACT
 
 #ifndef __ASSEMBLER__
 class AudioStream;
 class AudioConnection;
 
 typedef struct audio_block_struct {
-	int ref_count;
+	unsigned char ref_count;
 	unsigned char memory_pool_index;
 	unsigned char reserved1;
 	unsigned char reserved2;
 	int16_t data[AUDIO_BLOCK_SAMPLES];
-	uint32_t debug;
-	int line;
-	int time;
-	uint32_t memory_pool_mask;
 } audio_block_t;
 
 
@@ -153,7 +140,6 @@ public:
 			cpu_cycles_max = 0;
 		}
 	static void initialize_memory(audio_block_t *data, unsigned int num);
-	static void check_memory();
 	int processorUsage(void) { return CYCLE_COUNTER_APPROX_PERCENT(cpu_cycles); }
 	int processorUsageMax(void) { return CYCLE_COUNTER_APPROX_PERCENT(cpu_cycles_max); }
 	void processorUsageMaxReset(void) { cpu_cycles_max = cpu_cycles; }
@@ -166,7 +152,7 @@ public:
 protected:
 	bool active;
 	unsigned char num_inputs;
-	static audio_block_t * allocate(int db =0);
+	static audio_block_t * allocate(void);
 	static void release(audio_block_t * block);
 	void transmit(audio_block_t *block, unsigned char index = 0);
 	audio_block_t * receiveReadOnly(unsigned int index = 0);
