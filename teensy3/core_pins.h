@@ -1,6 +1,6 @@
 /* Teensyduino Core Library
  * http://www.pjrc.com/teensy/
- * Copyright (c) 2013 PJRC.COM, LLC.
+ * Copyright (c) 2017 PJRC.COM, LLC.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -96,15 +96,15 @@
 //	A3	FTM0_CH0	SWD Data
 
 #if defined(__MK20DX128__)
-#define CORE_NUM_TOTAL_PINS     34
-#define CORE_NUM_DIGITAL        34
-#define CORE_NUM_INTERRUPT      34
+#define CORE_NUM_TOTAL_PINS     36 // 34
+#define CORE_NUM_DIGITAL        36 // 34
+#define CORE_NUM_INTERRUPT      36 // 34
 #define CORE_NUM_ANALOG         14
 #define CORE_NUM_PWM            10
 #elif defined(__MK20DX256__)
-#define CORE_NUM_TOTAL_PINS     34
-#define CORE_NUM_DIGITAL        34
-#define CORE_NUM_INTERRUPT      34
+#define CORE_NUM_TOTAL_PINS     36 // 34
+#define CORE_NUM_DIGITAL        36 // 34
+#define CORE_NUM_INTERRUPT      36 // 34
 #define CORE_NUM_ANALOG         21
 #define CORE_NUM_PWM            12
 #elif defined(__MKL26Z64__)
@@ -186,7 +186,8 @@
 #define CORE_PIN31_BIT		0
 #define CORE_PIN32_BIT		18
 #define CORE_PIN33_BIT		4
-#define CORE_PIN34X_BIT		2
+#define CORE_PIN34_BIT		1
+#define CORE_PIN35_BIT		2
 
 #define CORE_PIN0_BITMASK	(1<<(CORE_PIN0_BIT))
 #define CORE_PIN1_BITMASK	(1<<(CORE_PIN1_BIT))
@@ -222,7 +223,10 @@
 #define CORE_PIN31_BITMASK	(1<<(CORE_PIN31_BIT))
 #define CORE_PIN32_BITMASK	(1<<(CORE_PIN32_BIT))
 #define CORE_PIN33_BITMASK	(1<<(CORE_PIN33_BIT))
-#define CORE_PIN34X_BITMASK	(1<<(CORE_PIN34X_BIT))
+#ifdef CORE_XTRA_PINS
+#define CORE_PIN34_BITMASK	(1<<(CORE_PIN34_BIT))
+#define CORE_PIN35_BITMASK	(1<<(CORE_PIN35_BIT))
+#endif
 
 #define CORE_PIN0_PORTREG	GPIOB_PDOR
 #define CORE_PIN1_PORTREG	GPIOB_PDOR
@@ -258,7 +262,10 @@
 #define CORE_PIN31_PORTREG	GPIOE_PDOR
 #define CORE_PIN32_PORTREG	GPIOB_PDOR
 #define CORE_PIN33_PORTREG	GPIOA_PDOR
-#define CORE_PIN34X_PORTREG	GPIOA_PDOR
+#ifdef CORE_XTRA_PINS
+#define CORE_PIN34_PORTREG	GPIOA_PDOR
+#define CORE_PIN35_PORTREG	GPIOA_PDOR
+#endif
 
 #define CORE_PIN0_PORTSET	GPIOB_PSOR
 #define CORE_PIN1_PORTSET	GPIOB_PSOR
@@ -294,7 +301,10 @@
 #define CORE_PIN31_PORTSET	GPIOE_PSOR
 #define CORE_PIN32_PORTSET	GPIOB_PSOR
 #define CORE_PIN33_PORTSET	GPIOA_PSOR
-#define CORE_PIN34X_PORTSET	GPIOA_PSOR
+#ifdef CORE_XTRA_PINS
+#define CORE_PIN34_PORTSET	GPIOA_PSOR
+#define CORE_PIN35_PORTSET	GPIOA_PSOR
+#endif
 
 #define CORE_PIN0_PORTCLEAR	GPIOB_PCOR
 #define CORE_PIN1_PORTCLEAR	GPIOB_PCOR
@@ -330,7 +340,10 @@
 #define CORE_PIN31_PORTCLEAR	GPIOE_PCOR
 #define CORE_PIN32_PORTCLEAR	GPIOB_PCOR
 #define CORE_PIN33_PORTCLEAR	GPIOA_PCOR
-#define CORE_PIN34X_PORTCLEAR	GPIOA_PCOR
+#ifdef CORE_XTRA_PINS
+#define CORE_PIN34_PORTCLEAR	GPIOA_PCOR
+#define CORE_PIN35_PORTCLEAR	GPIOA_PCOR
+#endif
 
 #define CORE_PIN0_DDRREG	GPIOB_PDDR
 #define CORE_PIN1_DDRREG	GPIOB_PDDR
@@ -366,7 +379,10 @@
 #define CORE_PIN31_DDRREG	GPIOE_PDDR
 #define CORE_PIN32_DDRREG	GPIOB_PDDR
 #define CORE_PIN33_DDRREG	GPIOA_PDDR
-#define CORE_PIN34X_DDRREG	GPIOA_PDDR
+#ifdef CORE_XTRA_PINS
+#define CORE_PIN34_DDRREG	GPIOA_PDDR
+#define CORE_PIN35_DDRREG	GPIOA_PDDR
+#endif
 
 #define CORE_PIN0_PINREG	GPIOB_PDIR
 #define CORE_PIN1_PINREG	GPIOB_PDIR
@@ -402,7 +418,10 @@
 #define CORE_PIN31_PINREG	GPIOE_PDIR
 #define CORE_PIN32_PINREG	GPIOB_PDIR
 #define CORE_PIN33_PINREG	GPIOA_PDIR
-#define CORE_PIN34X_PINREG	GPIOA_PDIR
+#ifdef CORE_XTRA_PINS
+#define CORE_PIN34_PINREG	GPIOA_PDIR
+#define CORE_PIN35_PINREG	GPIOA_PDIR
+#endif
 
 #define CORE_PIN0_CONFIG	PORTB_PCR16
 #define CORE_PIN1_CONFIG	PORTB_PCR17
@@ -438,7 +457,10 @@
 #define CORE_PIN31_CONFIG	PORTE_PCR0
 #define CORE_PIN32_CONFIG	PORTB_PCR18
 #define CORE_PIN33_CONFIG	PORTA_PCR4
-#define CORE_PIN34X_CONFIG	PORTA_PCR2
+#ifdef CORE_XTRA_PINS
+#define CORE_PIN34_CONFIG	PORTA_PCR1
+#define CORE_PIN35_CONFIG	PORTA_PCR2
+#endif
 
 #define CORE_ADC0_PIN		14
 #define CORE_ADC1_PIN		15
@@ -496,6 +518,8 @@
 #define CORE_INT31_PIN		31
 #define CORE_INT32_PIN		32
 #define CORE_INT33_PIN		33
+#define CORE_INT34_PIN		34
+#define CORE_INT35_PIN		35
 #define CORE_INT_EVERY_PIN	1
 
 
@@ -1561,12 +1585,15 @@ static inline void digitalWriteFast(uint8_t pin, uint8_t val)
 				CORE_PIN33_PORTSET = CORE_PIN33_BITMASK;
 			}
 			#endif
-			#if defined(CORE_PIN34X_PORTSET)
+			#if defined(CORE_XTRA_PINS)
 			else if (pin == 34) {
-				CORE_PIN34X_PORTSET = CORE_PIN34X_BITMASK;
+				CORE_PIN34_PORTSET = CORE_PIN34_BITMASK;
+			}
+			else if (pin == 35) {
+				CORE_PIN35_PORTSET = CORE_PIN35_BITMASK;
 			}
 			#endif
-			#if defined(CORE_PIN34_PORTSET)
+			#if !defined(CORE_XTRA_PINS) && defined(CORE_PIN34_PORTSET)
 			  else if (pin == 34) {
 				CORE_PIN34_PORTSET = CORE_PIN34_BITMASK;
 			} else if (pin == 35) {
@@ -1702,12 +1729,15 @@ static inline void digitalWriteFast(uint8_t pin, uint8_t val)
 				CORE_PIN33_PORTCLEAR = CORE_PIN33_BITMASK;
 			}
 			#endif
-			#if defined(CORE_PIN34X_PORTCLEAR)
+			#if defined(CORE_XTRA_PINS)
 			else if (pin == 34) {
-				CORE_PIN34X_PORTCLEAR = CORE_PIN34X_BITMASK;
+				CORE_PIN34_PORTCLEAR = CORE_PIN34_BITMASK;
+			}
+			else if (pin == 35) {
+				CORE_PIN35_PORTCLEAR = CORE_PIN35_BITMASK;
 			}
 			#endif
-			#if defined(CORE_PIN34_PORTCLEAR)
+			#if !defined(CORE_XTRA_PINS) && defined(CORE_PIN34_PORTCLEAR)
 			  else if (pin == 34) {
 				CORE_PIN34_PORTCLEAR = CORE_PIN34_BITMASK;
 			} else if (pin == 35) {
@@ -1857,12 +1887,15 @@ static inline uint8_t digitalReadFast(uint8_t pin)
 			return (CORE_PIN33_PINREG & CORE_PIN33_BITMASK) ? 1 : 0;
 		}
 		#endif
-		#if defined(CORE_PIN34X_PINREG)
+		#if defined(CORE_XTRA_PINS)
 		else if (pin == 34) {
-			return (CORE_PIN34X_PINREG & CORE_PIN34X_BITMASK) ? 1 : 0;
+			return (CORE_PIN34_PINREG & CORE_PIN34_BITMASK) ? 1 : 0;
+		}
+		else if (pin == 35) {
+			return (CORE_PIN35_PINREG & CORE_PIN35_BITMASK) ? 1 : 0;
 		}
 		#endif
-		#if defined(CORE_PIN34_PINREG)
+		#if !defined(CORE_XTRA_PINS) && defined(CORE_PIN34_PINREG)
 		  else if (pin == 34) {
 			return (CORE_PIN34_PINREG & CORE_PIN34_BITMASK) ? 1 : 0;
 		} else if (pin == 35) {
@@ -1941,8 +1974,8 @@ static inline uint8_t digitalReadFast(uint8_t pin)
 void pinMode(uint8_t pin, uint8_t mode);
 void init_pins(void);
 void analogWrite(uint8_t pin, int val);
-void analogWriteRes(uint32_t bits);
-static inline void analogWriteResolution(uint32_t bits) { analogWriteRes(bits); }
+uint32_t analogWriteRes(uint32_t bits);
+static inline uint32_t analogWriteResolution(uint32_t bits) { return analogWriteRes(bits); }
 void analogWriteFrequency(uint8_t pin, float frequency);
 void analogWriteDAC0(int val);
 void analogWriteDAC1(int val);

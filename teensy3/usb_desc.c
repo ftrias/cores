@@ -1,6 +1,6 @@
 /* Teensyduino Core Library
  * http://www.pjrc.com/teensy/
- * Copyright (c) 2013 PJRC.COM, LLC.
+ * Copyright (c) 2017 PJRC.COM, LLC.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -542,7 +542,7 @@ static uint8_t flightsim_report_desc[] = {
 
 #define AUDIO_INTERFACE_DESC_POS	KEYMEDIA_INTERFACE_DESC_POS+KEYMEDIA_INTERFACE_DESC_SIZE
 #ifdef  AUDIO_INTERFACE
-#define AUDIO_INTERFACE_DESC_SIZE	8 + 9+10+12+9+12+10+9 + 9+9+7+11+9+7 + 9+9+7+11+9+7 +9
+#define AUDIO_INTERFACE_DESC_SIZE	8 + 9+10+12+9+12+10+9 + 9+9+7+11+9+7 + 9+9+7+11+9+7+9
 #else
 #define AUDIO_INTERFACE_DESC_SIZE	0
 #endif
@@ -943,7 +943,7 @@ static uint8_t config_descriptor[CONFIG_DESC_SIZE] = {
         0x06,                                   // bInterfaceClass (0x06 = still image)
         0x01,                                   // bInterfaceSubClass
         0x01,                                   // bInterfaceProtocol
-        0,                                      // iInterface
+        4,                                      // iInterface
         // endpoint descriptor, USB spec 9.6.6, page 269-271, Table 9-13
         7,                                      // bLength
         5,                                      // bDescriptorType
@@ -1131,7 +1131,7 @@ static uint8_t config_descriptor[CONFIG_DESC_SIZE] = {
 	9, 					// bLength
 	5, 					// bDescriptorType, 5 = ENDPOINT_DESCRIPTOR
 	AUDIO_TX_ENDPOINT | 0x80,		// bEndpointAddress
-	0x05, 					// bmAttributes = isochronous, asynchronous
+	0x09, 					// bmAttributes = isochronous, adaptive
 	LSB(AUDIO_TX_SIZE), MSB(AUDIO_TX_SIZE),	// wMaxPacketSize
 	1,			 		// bInterval, 1 = every frame
 	0,					// bRefresh
@@ -1208,7 +1208,6 @@ static uint8_t config_descriptor[CONFIG_DESC_SIZE] = {
 	9, 					// bLength
 	5, 					// bDescriptorType, 5 = ENDPOINT_DESCRIPTOR
 	AUDIO_SYNC_ENDPOINT | 0x80,		// bEndpointAddress
-        // below should be 1? FT
 	0x11, 					// bmAttributes = isochronous, feedback
 	3, 0,					// wMaxPacketSize, 3 bytes
 	1,			 		// bInterval, 1 = every frame
@@ -1292,6 +1291,44 @@ struct usb_string_descriptor_struct usb_string_serial_number_default = {
         {0,0,0,0,0,0,0,0,0,0}
 };
 
+#ifdef MTP_INTERFACE
+struct usb_string_descriptor_struct usb_string_mtp = {
+	2 + 3 * 2,
+	3,
+	{'M','T','P'}
+};
+#endif
+
+void delay(uint32_t msec);
+
+void usb_init_descriptor(int configuration) {
+        #ifdef PRODUCT_ID2
+        if (configuration==1) {
+                config_descriptor[4] = 1; // use only 1 interface (MIDI)
+                device_descriptor[10] = LSB(PRODUCT_ID2);
+                device_descriptor[11] = MSB(PRODUCT_ID2);
+        }
+        else {
+                config_descriptor[4] = 4; // use all interfaces (Audio, Midi)
+                device_descriptor[10] = LSB(PRODUCT_ID);
+                device_descriptor[11] = MSB(PRODUCT_ID);                
+        }
+        #endif
+}
+
+void usb_force_reset(int configuration) {
+        usb_init_descriptor(configuration);
+        USB0_CONTROL = 0; // remove pullup to simulate unplug
+        delay(200);
+        // add pullup to simulate plug in
+        USB0_CONTROL = USB_CONTROL_DPPULLUPNONOTG;
+
+    // USB0_USBTRC0 = USB_USBTRC_USBRESET;
+    // while ((USB0_USBTRC0 & USB_USBTRC_USBRESET) != 0) ; // wait for reset to end
+}
+
+unsigned int usb_default_serialnumber = 99;
+
 void usb_init_serialnumber(void)
 {
 	char buf[11];
@@ -1315,6 +1352,7 @@ void usb_init_serialnumber(void)
 	kinetis_hsrun_enable();
 #endif
 	__enable_irq();
+        if (num == -1) num = usb_default_serialnumber;
 	// add extra zero to work around OS-X CDC-ACM driver bug
 	if (num < 10000000) num = num * 10;
 	ultoa(num, buf, 10);
@@ -1325,7 +1363,6 @@ void usb_init_serialnumber(void)
 	}
 	usb_string_serial_number_default.bLength = i * 2 + 2;
 }
-
 
 // **************************************************************
 //   Descriptors List
@@ -1368,6 +1405,9 @@ const usb_descriptor_list_t usb_descriptor_list[] = {
 #ifdef MULTITOUCH_INTERFACE
         {0x2200, MULTITOUCH_INTERFACE, multitouch_report_desc, sizeof(multitouch_report_desc)},
         {0x2100, MULTITOUCH_INTERFACE, config_descriptor+MULTITOUCH_HID_DESC_OFFSET, 9},
+#endif
+#ifdef MTP_INTERFACE
+	{0x0304, 0x0409, (const uint8_t *)&usb_string_mtp, 0},
 #endif
         {0x0300, 0x0000, (const uint8_t *)&string0, 0},
         {0x0301, 0x0409, (const uint8_t *)&usb_string_manufacturer_name, 0},

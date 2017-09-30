@@ -1,6 +1,6 @@
 /* Teensyduino Core Library
  * http://www.pjrc.com/teensy/
- * Copyright (c) 2016 PJRC.COM, LLC.
+ * Copyright (c) 2017 PJRC.COM, LLC.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -229,9 +229,9 @@ static void usb_setup(void)
 			reg += 4;
 #ifdef AUDIO_INTERFACE
 			if (i == AUDIO_RX_ENDPOINT) {
-				table[index(i, RX, EVEN)].addr = usb_audio_receive_buffer1;
+				table[index(i, RX, EVEN)].addr = usb_audio_receive_buffer;
 				table[index(i, RX, EVEN)].desc = (AUDIO_RX_SIZE<<16) | BDT_OWN;
-				table[index(i, RX, ODD)].addr = usb_audio_receive_buffer2;
+				table[index(i, RX, ODD)].addr = usb_audio_receive_buffer;
 				table[index(i, RX, ODD)].desc = (AUDIO_RX_SIZE<<16) | BDT_OWN;
 			} else
 #endif
@@ -276,14 +276,15 @@ static void usb_setup(void)
 		data = reply_buffer;
 		break;
 	  case 0x0082: // GET_STATUS (endpoint)
-		if (setup.wIndex > NUM_ENDPOINTS) {
+		i = setup.wIndex & 0x7F;
+		if (i > NUM_ENDPOINTS) {
 			// TODO: do we need to handle IN vs OUT here?
 			endpoint0_stall();
 			return;
 		}
 		reply_buffer[0] = 0;
 		reply_buffer[1] = 0;
-		if (*(uint8_t *)(&USB0_ENDPT0 + setup.wIndex * 4) & 0x02) reply_buffer[0] = 1;
+		if (*(uint8_t *)(&USB0_ENDPT0 + i * 4) & 0x02) reply_buffer[0] = 1;
 		data = reply_buffer;
 		datalen = 2;
 		break;
@@ -360,18 +361,23 @@ static void usb_setup(void)
 #endif
 
 #if defined(MTP_INTERFACE)
-	case 0x2164: // Cancel Request (PTP spec, 5.2.1, page 8)
+	case 0x64A1: // Cancel Request (PTP spec, 5.2.1, page 8)
 		// TODO: required by PTP spec
 		endpoint0_stall();
 		return;
-	case 0x2166: // Device Reset (PTP spec, 5.2.3, page 10)
+	case 0x66A1: // Device Reset (PTP spec, 5.2.3, page 10)
 		// TODO: required by PTP spec
 		endpoint0_stall();
 		return;
-	case 0x2167: // Get Device Statis (PTP spec, 5.2.4, page 10)
-		// TODO: required by PTP spec
-		endpoint0_stall();
-		return;
+	case 0x67A1: // Get Device Statis (PTP spec, 5.2.4, page 10)
+		// For now, always respond with status ok.
+		reply_buffer[0] = 0x4;
+		reply_buffer[1] = 0;
+		reply_buffer[2] = 0x01;
+		reply_buffer[3] = 0x20;
+		data = reply_buffer;
+		datalen = 4;
+		break;
 #endif
 
 // TODO: this does not work... why?
@@ -883,9 +889,6 @@ void usb_isr(void)
 	status = USB0_ISTAT;
 
 	if ((status & USB_ISTAT_SOFTOK /* 04 */ )) {
-		usb_audio_sync_sof_last = usb_audio_sync_sof;
-		usb_audio_sync_sof = cpu_ticks();
-
 		if (usb_configuration) {
 			t = usb_reboot_timer;
 			if (t) {
@@ -956,17 +959,10 @@ void usb_isr(void)
 					tx_state[endpoint] ^= 1;
 				}
 			} else if ((endpoint == AUDIO_RX_ENDPOINT-1) && !(stat & 0x08)) {
-				if (stat & 0b100) {
-					usb_audio_receive_buffer = usb_audio_receive_buffer2;
-				}
-				else {
-					usb_audio_receive_buffer = usb_audio_receive_buffer1;
-				}
 				usb_audio_receive_callback(b->desc >> 16);
-				// b->addr = usb_audio_receive_buffer;
+				b->addr = usb_audio_receive_buffer;
 				b->desc = (AUDIO_RX_SIZE << 16) | BDT_OWN;
 			} else if ((endpoint == AUDIO_SYNC_ENDPOINT-1) && (stat & 0x08)) {
-				usb_audio_feedback_callback();
 				b = (bdt_t *)((uint32_t)b ^ 8);
 				b->addr = &usb_audio_sync_feedback;
 				b->desc = (3 << 16) | BDT_OWN;

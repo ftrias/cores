@@ -1,6 +1,6 @@
 /* Teensyduino Core Library
  * http://www.pjrc.com/teensy/
- * Copyright (c) 2013 PJRC.COM, LLC.
+ * Copyright (c) 2017 PJRC.COM, LLC.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -99,7 +99,7 @@ extern void usb_flightsim_flush_callback(void);
 #endif
 
 #ifdef AUDIO_INTERFACE
-extern uint16_t *usb_audio_receive_buffer;
+extern uint16_t usb_audio_receive_buffer[];
 extern uint16_t usb_audio_transmit_buffer[];
 extern uint32_t usb_audio_sync_feedback;
 extern uint8_t usb_audio_receive_setting;

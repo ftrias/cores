@@ -1,6 +1,6 @@
 /* Teensyduino Core Library
  * http://www.pjrc.com/teensy/
- * Copyright (c) 2013 PJRC.COM, LLC.
+ * Copyright (c) 2017 PJRC.COM, LLC.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -57,9 +57,11 @@
 
 #ifndef AUDIO_SAMPLE_RATE_EXACT
 #if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
-#define AUDIO_SAMPLE_RATE_EXACT 44117.64706 // 48 MHz / 1088, or 96 MHz * 2 / 17 / 256
+// #define AUDIO_SAMPLE_RATE_EXACT 44117.64706 // 48 MHz / 1088, or 96 MHz * 2 / 17 / 256
+#define AUDIO_SAMPLE_RATE_EXACT 44100.0 // 48 MHz / 1088, or 96 MHz * 147 / 1250 / 256
 #elif defined(__MKL26Z64__)
-#define AUDIO_SAMPLE_RATE_EXACT 22058.82353 // 48 MHz / 2176, or 96 MHz * 1 / 17 / 256
+// #define AUDIO_SAMPLE_RATE_EXACT 22058.82353 // 48 MHz / 2176, or 96 MHz * 1 / 17 / 256
+#define AUDIO_SAMPLE_RATE_EXACT 22000.0 // 48 MHz / 2176, or 96 MHz * 147 / 1250 / 128
 #endif
 #endif
 
@@ -70,11 +72,10 @@ class AudioStream;
 class AudioConnection;
 
 typedef struct audio_block_struct {
-	unsigned char ref_count;
-	unsigned char memory_pool_index;
-	unsigned char reserved1;
-	unsigned char reserved2;
-	int16_t data[AUDIO_BLOCK_SAMPLES];
+	uint8_t  ref_count;
+	uint8_t  reserved1;
+	uint16_t memory_pool_index;
+	int16_t  data[AUDIO_BLOCK_SAMPLES];
 } audio_block_t;
 
 
@@ -147,8 +148,8 @@ public:
 	uint16_t cpu_cycles_max;
 	static uint16_t cpu_cycles_total;
 	static uint16_t cpu_cycles_total_max;
-	static uint8_t memory_used;
-	static uint8_t memory_used_max;
+	static uint16_t memory_used;
+	static uint16_t memory_used_max;
 protected:
 	bool active;
 	unsigned char num_inputs;
@@ -170,7 +171,8 @@ private:
 	static AudioStream *first_update; // for update_all
 	AudioStream *next_update; // for update_all
 	static audio_block_t *memory_pool;
-	static uint32_t memory_pool_available_mask[6];
+	static uint32_t memory_pool_available_mask[];
+	static uint16_t memory_pool_first_mask;
 };
 
 #endif

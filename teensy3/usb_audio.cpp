@@ -1,6 +1,6 @@
 /* Teensyduino Core Library
  * http://www.pjrc.com/teensy/
- * Copyright (c) 2016 PJRC.COM, LLC.
+ * Copyright (c) 2017 PJRC.COM, LLC.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -54,43 +54,11 @@ int usb_aduio_sync_count_last;
 usb_audio_features AudioInputUSB::features;
 
 #define DMABUFATTR __attribute__ ((section(".dmabuffers"), aligned (4)))
-uint16_t usb_audio_receive_buffer1[AUDIO_RX_SIZE/2] DMABUFATTR;
-uint16_t usb_audio_receive_buffer2[AUDIO_RX_SIZE/2] DMABUFATTR;
+uint16_t usb_audio_receive_buffer[AUDIO_RX_SIZE/2] DMABUFATTR;
 uint32_t usb_audio_sync_feedback DMABUFATTR;
-uint16_t *usb_audio_receive_buffer;
-
 uint8_t usb_audio_receive_setting=0;
 
 static uint32_t feedback_accumulator = 185042824;
-
-class AudioBuffer {
-private:
-	const static int buffer_len = AUDIO_BLOCK_SAMPLES * 10;
-	int16_t buffer[buffer_len];
-	int writeidx;
-	int readidx;
-public:
-	void add(uint16_t *data, int len) {
-		for (int i = 0; i < len * 2; i++) {
-			buffer[writeidx++] = data[i];
-			if (writeidx >= buffer_len) writeidx = 0;
-		}
-	}
-	void copy(int16_t *left, int16_t *right, int len) {
-		for (int i = 0; i < len; i++) {
-			left[i] = buffer[readidx++];
-			if (readidx >= buffer_len) readidx = 0;
-			right[i] = buffer[readidx++];
-			if (readidx >= buffer_len) readidx = 0;
-		}
-	}
-	int size() {
-		if (readidx <= writeidx) return writeidx - readidx;
-		return buffer_len - readidx + writeidx;
-	}
-};
-
-AudioBuffer read_buffer;
 
 void AudioInputUSB::begin(void)
 {
@@ -109,54 +77,153 @@ void AudioInputUSB::begin(void)
 	usb_audio_sync_feedback = feedback_accumulator >> 8;
 }
 
-void usb_audio_feedback_callback() 
+static void copy_to_buffers(const uint32_t *src, int16_t *left, int16_t *right, unsigned int len)
 {
-	int msize = read_buffer.size();
-	if (msize < AUDIO_BLOCK_SAMPLES * 3) {
-		usb_audio_sync_feedback++;
-	}
-	if (msize > AUDIO_BLOCK_SAMPLES * 5) {
-		usb_audio_sync_feedback--;
+	uint32_t *target = (uint32_t*) src + len; 
+	while ((src < target) && (((uintptr_t) left & 0x02) != 0)) {
+		uint32_t n = *src++;
+		*left++ = n & 0xFFFF;
+		*right++ = n >> 16;
 	}
 
-	if (usb_audio_sync_feedback > 729759) usb_audio_sync_feedback = 729759;
-	else if (usb_audio_sync_feedback < 715306) usb_audio_sync_feedback = 715306;
+	while ((src < target - 2)) {
+		uint32_t n1 = *src++;
+		uint32_t n = *src++;
+		*(uint32_t *)left = (n1 & 0xFFFF) | ((n & 0xFFFF) << 16);
+		left+=2;
+		*(uint32_t *)right = (n1 >> 16) | ((n & 0xFFFF0000)) ;
+		right+=2;
+	}
+
+	while ((src < target)) {
+		uint32_t n = *src++;
+		*left++ = n & 0xFFFF;
+		*right++ = n >> 16;
+	}
 }
 
 // Called from the USB interrupt when an isochronous packet arrives
 // we must completely remove it from the receive buffer before returning
 //
-void usb_audio_receive_callback(unsigned int len) {
+void usb_audio_receive_callback(unsigned int len)
+{
+	unsigned int count, avail;
+	audio_block_t *left, *right;
+	const uint32_t *data;
+
+	AudioInputUSB::receive_flag = 1;
 	len >>= 2; // 1 sample = 4 bytes: 2 left, 2 right
-	usb_aduio_sync_count_last = len;
-	read_buffer.add(usb_audio_receive_buffer, len);
+	data = (const uint32_t *)usb_audio_receive_buffer;
+
+	count = AudioInputUSB::incoming_count;
+	left = AudioInputUSB::incoming_left;
+	right = AudioInputUSB::incoming_right;
+	if (left == NULL) {
+		left = AudioStream::allocate();
+		if (left == NULL) return;
+		AudioInputUSB::incoming_left = left;
+	}
+	if (right == NULL) {
+		right = AudioStream::allocate();
+		if (right == NULL) return;
+		AudioInputUSB::incoming_right = right;
+	}
+	while (len > 0) {
+		avail = AUDIO_BLOCK_SAMPLES - count;
+		if (len < avail) {
+			copy_to_buffers(data, left->data + count, right->data + count, len);
+			AudioInputUSB::incoming_count = count + len;
+			return;
+		} else if (avail > 0) {
+			copy_to_buffers(data, left->data + count, right->data + count, avail);
+			data += avail;
+			len -= avail;
+			if (AudioInputUSB::ready_left || AudioInputUSB::ready_right) {
+				// buffer overrun, PC sending too fast
+				AudioInputUSB::incoming_count = count + avail;
+				//if (len > 0) {
+					//serial_print("!");
+					//serial_phex(len);
+				//}
+				return;
+			}
+			send:
+			AudioInputUSB::ready_left = left;
+			AudioInputUSB::ready_right = right;
+			//if (AudioInputUSB::update_responsibility) AudioStream::update_all();
+			left = AudioStream::allocate();
+			if (left == NULL) {
+				AudioInputUSB::incoming_left = NULL;
+				AudioInputUSB::incoming_right = NULL;
+				AudioInputUSB::incoming_count = 0;
+				return;
+			}
+			right = AudioStream::allocate();
+			if (right == NULL) {
+				AudioStream::release(left);
+				AudioInputUSB::incoming_left = NULL;
+				AudioInputUSB::incoming_right = NULL;
+				AudioInputUSB::incoming_count = 0;
+				return;
+			}
+			AudioInputUSB::incoming_left = left;
+			AudioInputUSB::incoming_right = right;
+			count = 0;
+		} else {
+			if (AudioInputUSB::ready_left || AudioInputUSB::ready_right) return;
+			goto send; // recover from buffer overrun
+		}
+	}
+	AudioInputUSB::incoming_count = count;
 }
 
 void AudioInputUSB::update(void)
 {
 	audio_block_t *left, *right;
 
-	if (read_buffer.size() < AUDIO_BLOCK_SAMPLES * 2) {
-		return;
+	__disable_irq();
+	left = ready_left;
+	ready_left = NULL;
+	right = ready_right;
+	ready_right = NULL;
+	uint16_t c = incoming_count;
+	uint8_t f = receive_flag;
+	receive_flag = 0;
+	__enable_irq();
+	if (f) {
+		int diff = AUDIO_BLOCK_SAMPLES/2 - (int)c;
+		feedback_accumulator += diff / 3;
+		uint32_t feedback = (feedback_accumulator >> 8) + diff * 100;
+#ifdef MACOSX_ADAPTIVE_LIMIT
+		if (feedback > 722698) feedback = 722698;
+#endif
+		usb_audio_sync_feedback = feedback;
+		//if (diff > 0) {
+			//serial_print(".");
+		//} else if (diff < 0) {
+			//serial_print("^");
+		//}
 	}
-
-	left = allocate();
-	if (left==NULL) {
-		return;
+	//serial_phex(c);
+	//serial_print(".");
+	if (!left || !right) {
+		//serial_print("#"); // buffer underrun - PC sending too slow
+		//if (f) feedback_accumulator += 10 << 8;
 	}
-	right = allocate();
-	if (right == NULL) {
+	if (left) {
+		transmit(left, 0);
 		release(left);
-		return;
 	}
-
-	read_buffer.copy(left->data, right->data, AUDIO_BLOCK_SAMPLES);
-
-	transmit(left, 0);
-	release(left);
-	transmit(right, 1);
-	release(right);
+	if (right) {
+		transmit(right, 1);
+		release(right);
+	}
 }
+
+
+
+
+
 
 
 bool AudioOutputUSB::update_responsibility;
@@ -190,8 +257,11 @@ void AudioOutputUSB::update(void)
 {
 	audio_block_t *left, *right;
 
-	left = receiveReadOnly(0); // input 0 = left channel
-	right = receiveReadOnly(1); // input 1 = right channel
+	// TODO: we shouldn't be writing to these......
+	//left = receiveReadOnly(0); // input 0 = left channel
+	//right = receiveReadOnly(1); // input 1 = right channel
+	left = receiveWritable(0); // input 0 = left channel
+	right = receiveWritable(1); // input 1 = right channel
 	if (usb_audio_transmit_setting == 0) {
 		if (left) release(left);
 		if (right) release(right);
@@ -203,12 +273,20 @@ void AudioOutputUSB::update(void)
 		return;
 	}
 	if (left == NULL) {
-		if (right == NULL) return;
-		right->ref_count++;
-		left = right;
-	} else if (right == NULL) {
-		left->ref_count++;
-		right = left;
+		left = allocate();
+		if (left == NULL) {
+			if (right) release(right);
+			return;
+		}
+		memset(left->data, 0, sizeof(left->data));
+	}
+	if (right == NULL) {
+		right = allocate();
+		if (right == NULL) {
+			release(left);
+			return;
+		}
+		memset(right->data, 0, sizeof(right->data));
 	}
 	__disable_irq();
 	if (left_1st == NULL) {
@@ -245,19 +323,12 @@ unsigned int usb_audio_transmit_callback(void)
 	uint32_t avail, num, target, offset, len=0;
 	audio_block_t *left, *right;
 
-	if (usb_aduio_sync_count_last) {
-		target = usb_aduio_sync_count_last;
-		usb_aduio_sync_count_last = 0;
+	if (++count < 9) {   // TODO: dynamic adjust to match USB rate
+		target = 44;
+	} else {
+		count = 0;
+		target = 45;
 	}
-	else {
-		if (++count < 9) {   // TODO: dynamic adjust to match USB rate
-			target = 44;
-		} else {
-			count = 0;
-			target = 45;
-		}		
-	}
-
 	while (len < target) {
 		num = target - len;
 		left = AudioOutputUSB::left_1st;

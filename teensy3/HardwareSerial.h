@@ -1,6 +1,6 @@
 /* Teensyduino Core Library
  * http://www.pjrc.com/teensy/
- * Copyright (c) 2013 PJRC.COM, LLC.
+ * Copyright (c) 2017 PJRC.COM, LLC.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -33,8 +33,16 @@
 
 #include "kinetis.h"
 
-// uncomment to enable 9 bit formats
+// Uncomment to enable 9 bit formats.  These are default disabled to save memory.
 //#define SERIAL_9BIT_SUPPORT
+//
+// On Windows & Linux, this file is in Arduino's hardware/teensy/avr/cores/teensy3
+//   folder.  The Windows installer puts Arduino in C:\Program Files (x86)\Arduino
+// On Macintosh, you must control-click Arduino and select "Show Package Contents", then
+//   look in Contents/Java/hardware/teensy/avr/cores/teensy3 to find this file.
+//
+// Teensy 3.x boards support 9 bit mode on all their serial ports
+// Teensy LC only supports 9 bit mode on Serial1.  Serial2 & Serial3 can't use 9 bits.
 
 
 #define SERIAL_7E1 0x02
@@ -239,6 +247,7 @@ void serial6_clear(void);
 class HardwareSerial : public Stream
 {
 public:
+	constexpr HardwareSerial() {}
 	virtual void begin(uint32_t baud) { serial_begin(BAUD2DIV(baud)); }
 	virtual void begin(uint32_t baud, uint32_t format) {
 					  serial_begin(BAUD2DIV(baud));
@@ -275,6 +284,7 @@ extern void serialEvent1(void);
 class HardwareSerial2 : public HardwareSerial
 {
 public:
+	constexpr HardwareSerial2() {}
 	virtual void begin(uint32_t baud) { serial2_begin(BAUD2DIV2(baud)); }
 	virtual void begin(uint32_t baud, uint32_t format) {
 					  serial2_begin(BAUD2DIV2(baud));
@@ -311,6 +321,7 @@ extern void serialEvent2(void);
 class HardwareSerial3 : public HardwareSerial
 {
 public:
+	constexpr HardwareSerial3() {}
 	virtual void begin(uint32_t baud) { serial3_begin(BAUD2DIV3(baud)); }
 	virtual void begin(uint32_t baud, uint32_t format) {
 					  serial3_begin(BAUD2DIV3(baud));
@@ -347,6 +358,7 @@ extern void serialEvent3(void);
 class HardwareSerial4 : public HardwareSerial
 {
 public:
+	constexpr HardwareSerial4() {}
 	virtual void begin(uint32_t baud) { serial4_begin(BAUD2DIV3(baud)); }
 	virtual void begin(uint32_t baud, uint32_t format) {
 					  serial4_begin(BAUD2DIV3(baud));
@@ -383,6 +395,7 @@ extern void serialEvent4(void);
 class HardwareSerial5 : public HardwareSerial
 {
 public:
+	constexpr HardwareSerial5() {}
 	virtual void begin(uint32_t baud) { serial5_begin(BAUD2DIV3(baud)); }
 	virtual void begin(uint32_t baud, uint32_t format) {
 					  serial5_begin(BAUD2DIV3(baud));
@@ -419,6 +432,7 @@ extern void serialEvent5(void);
 class HardwareSerial6 : public HardwareSerial
 {
 public:
+	constexpr HardwareSerial6() {}
 #if defined(__MK66FX1M0__)	// For LPUART just pass baud straight in. 
 	virtual void begin(uint32_t baud) { serial6_begin(baud); }
 	virtual void begin(uint32_t baud, uint32_t format) {
