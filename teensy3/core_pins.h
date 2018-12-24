@@ -96,15 +96,15 @@
 //	A3	FTM0_CH0	SWD Data
 
 #if defined(__MK20DX128__)
-#define CORE_NUM_TOTAL_PINS     36 // 34
-#define CORE_NUM_DIGITAL        36 // 34
-#define CORE_NUM_INTERRUPT      36 // 34
+#define CORE_NUM_TOTAL_PINS     40 // 34 VINDOR
+#define CORE_NUM_DIGITAL        40 // 34
+#define CORE_NUM_INTERRUPT      40 // 34
 #define CORE_NUM_ANALOG         14
 #define CORE_NUM_PWM            10
 #elif defined(__MK20DX256__)
-#define CORE_NUM_TOTAL_PINS     36 // 34
-#define CORE_NUM_DIGITAL        36 // 34
-#define CORE_NUM_INTERRUPT      36 // 34
+#define CORE_NUM_TOTAL_PINS     40 // 34 VINDOR
+#define CORE_NUM_DIGITAL        40 // 34
+#define CORE_NUM_INTERRUPT      40 // 34
 #define CORE_NUM_ANALOG         21
 #define CORE_NUM_PWM            12
 #elif defined(__MKL26Z64__)
@@ -186,8 +186,15 @@
 #define CORE_PIN31_BIT		0
 #define CORE_PIN32_BIT		18
 #define CORE_PIN33_BIT		4
+// Vindor
+#ifdef CORE_XTRA_PINS
 #define CORE_PIN34_BIT		1
 #define CORE_PIN35_BIT		2
+#define CORE_PIN36_BIT		2
+#define CORE_PIN37_BIT		3
+#define CORE_PIN38_BIT		4
+#define CORE_PIN39_BIT		5
+#endif
 
 #define CORE_PIN0_BITMASK	(1<<(CORE_PIN0_BIT))
 #define CORE_PIN1_BITMASK	(1<<(CORE_PIN1_BIT))
@@ -223,9 +230,14 @@
 #define CORE_PIN31_BITMASK	(1<<(CORE_PIN31_BIT))
 #define CORE_PIN32_BITMASK	(1<<(CORE_PIN32_BIT))
 #define CORE_PIN33_BITMASK	(1<<(CORE_PIN33_BIT))
+// Vindor
 #ifdef CORE_XTRA_PINS
 #define CORE_PIN34_BITMASK	(1<<(CORE_PIN34_BIT))
 #define CORE_PIN35_BITMASK	(1<<(CORE_PIN35_BIT))
+#define CORE_PIN36_BITMASK	(1<<(CORE_PIN36_BIT))
+#define CORE_PIN37_BITMASK	(1<<(CORE_PIN37_BIT))
+#define CORE_PIN38_BITMASK	(1<<(CORE_PIN38_BIT))
+#define CORE_PIN39_BITMASK	(1<<(CORE_PIN39_BIT))
 #endif
 
 #define CORE_PIN0_PORTREG	GPIOB_PDOR
@@ -262,9 +274,14 @@
 #define CORE_PIN31_PORTREG	GPIOE_PDOR
 #define CORE_PIN32_PORTREG	GPIOB_PDOR
 #define CORE_PIN33_PORTREG	GPIOA_PDOR
+// Vindor
 #ifdef CORE_XTRA_PINS
 #define CORE_PIN34_PORTREG	GPIOA_PDOR
 #define CORE_PIN35_PORTREG	GPIOA_PDOR
+#define CORE_PIN36_PORTREG	GPIOE_PDOR
+#define CORE_PIN37_PORTREG	GPIOE_PDOR
+#define CORE_PIN38_PORTREG	GPIOE_PDOR
+#define CORE_PIN39_PORTREG	GPIOE_PDOR
 #endif
 
 #define CORE_PIN0_PORTSET	GPIOB_PSOR
@@ -301,9 +318,14 @@
 #define CORE_PIN31_PORTSET	GPIOE_PSOR
 #define CORE_PIN32_PORTSET	GPIOB_PSOR
 #define CORE_PIN33_PORTSET	GPIOA_PSOR
+// Vindor
 #ifdef CORE_XTRA_PINS
 #define CORE_PIN34_PORTSET	GPIOA_PSOR
 #define CORE_PIN35_PORTSET	GPIOA_PSOR
+#define CORE_PIN36_PORTSET	GPIOE_PSOR
+#define CORE_PIN37_PORTSET	GPIOE_PSOR
+#define CORE_PIN38_PORTSET	GPIOE_PSOR
+#define CORE_PIN39_PORTSET	GPIOE_PSOR
 #endif
 
 #define CORE_PIN0_PORTCLEAR	GPIOB_PCOR
@@ -340,9 +362,14 @@
 #define CORE_PIN31_PORTCLEAR	GPIOE_PCOR
 #define CORE_PIN32_PORTCLEAR	GPIOB_PCOR
 #define CORE_PIN33_PORTCLEAR	GPIOA_PCOR
+// Vindor
 #ifdef CORE_XTRA_PINS
 #define CORE_PIN34_PORTCLEAR	GPIOA_PCOR
 #define CORE_PIN35_PORTCLEAR	GPIOA_PCOR
+#define CORE_PIN36_PORTCLEAR	GPIOE_PCOR
+#define CORE_PIN37_PORTCLEAR	GPIOE_PCOR
+#define CORE_PIN38_PORTCLEAR	GPIOE_PSOR
+#define CORE_PIN39_PORTCLEAR	GPIOE_PSOR
 #endif
 
 #define CORE_PIN0_DDRREG	GPIOB_PDDR
@@ -379,9 +406,14 @@
 #define CORE_PIN31_DDRREG	GPIOE_PDDR
 #define CORE_PIN32_DDRREG	GPIOB_PDDR
 #define CORE_PIN33_DDRREG	GPIOA_PDDR
+// Vindor
 #ifdef CORE_XTRA_PINS
 #define CORE_PIN34_DDRREG	GPIOA_PDDR
 #define CORE_PIN35_DDRREG	GPIOA_PDDR
+#define CORE_PIN36_DDRREG	GPIOE_PDDR
+#define CORE_PIN37_DDRREG	GPIOE_PDDR
+#define CORE_PIN38_DDRREG	GPIOE_PDDR
+#define CORE_PIN39_DDRREG	GPIOE_PDDR
 #endif
 
 #define CORE_PIN0_PINREG	GPIOB_PDIR
@@ -418,9 +450,14 @@
 #define CORE_PIN31_PINREG	GPIOE_PDIR
 #define CORE_PIN32_PINREG	GPIOB_PDIR
 #define CORE_PIN33_PINREG	GPIOA_PDIR
+// Vindor
 #ifdef CORE_XTRA_PINS
 #define CORE_PIN34_PINREG	GPIOA_PDIR
 #define CORE_PIN35_PINREG	GPIOA_PDIR
+#define CORE_PIN36_PINREG	GPIOE_PDIR
+#define CORE_PIN37_PINREG	GPIOE_PDIR
+#define CORE_PIN38_PINREG	GPIOE_PDIR
+#define CORE_PIN39_PINREG	GPIOE_PDIR
 #endif
 
 #define CORE_PIN0_CONFIG	PORTB_PCR16
@@ -457,9 +494,14 @@
 #define CORE_PIN31_CONFIG	PORTE_PCR0
 #define CORE_PIN32_CONFIG	PORTB_PCR18
 #define CORE_PIN33_CONFIG	PORTA_PCR4
+// Vindor
 #ifdef CORE_XTRA_PINS
 #define CORE_PIN34_CONFIG	PORTA_PCR1
 #define CORE_PIN35_CONFIG	PORTA_PCR2
+#define CORE_PIN36_CONFIG	PORTE_PCR2
+#define CORE_PIN37_CONFIG	PORTE_PCR3
+#define CORE_PIN38_CONFIG	PORTE_PCR4
+#define CORE_PIN39_CONFIG	PORTE_PCR5
 #endif
 
 #define CORE_ADC0_PIN		14
@@ -518,6 +560,7 @@
 #define CORE_INT31_PIN		31
 #define CORE_INT32_PIN		32
 #define CORE_INT33_PIN		33
+// Vindor
 #define CORE_INT34_PIN		34
 #define CORE_INT35_PIN		35
 #define CORE_INT_EVERY_PIN	1
@@ -1592,6 +1635,18 @@ static inline void digitalWriteFast(uint8_t pin, uint8_t val)
 			else if (pin == 35) {
 				CORE_PIN35_PORTSET = CORE_PIN35_BITMASK;
 			}
+			else if (pin == 36) {
+				CORE_PIN36_PORTSET = CORE_PIN36_BITMASK;
+			}
+			else if (pin == 37) {
+				CORE_PIN37_PORTSET = CORE_PIN37_BITMASK;
+			}
+			else if (pin == 38) {
+				CORE_PIN38_PORTSET = CORE_PIN38_BITMASK;
+			}
+			else if (pin == 39) {
+				CORE_PIN39_PORTSET = CORE_PIN39_BITMASK;
+			}
 			#endif
 			#if !defined(CORE_XTRA_PINS) && defined(CORE_PIN34_PORTSET)
 			  else if (pin == 34) {
@@ -1735,6 +1790,18 @@ static inline void digitalWriteFast(uint8_t pin, uint8_t val)
 			}
 			else if (pin == 35) {
 				CORE_PIN35_PORTCLEAR = CORE_PIN35_BITMASK;
+			}
+			else if (pin == 36) {
+				CORE_PIN36_PORTCLEAR = CORE_PIN36_BITMASK;
+			}
+			else if (pin == 37) {
+				CORE_PIN37_PORTCLEAR = CORE_PIN37_BITMASK;
+			}
+			else if (pin == 38) {
+				CORE_PIN38_PORTCLEAR = CORE_PIN38_BITMASK;
+			}
+			else if (pin == 39) {
+				CORE_PIN39_PORTCLEAR = CORE_PIN39_BITMASK;
 			}
 			#endif
 			#if !defined(CORE_XTRA_PINS) && defined(CORE_PIN34_PORTCLEAR)
@@ -1893,6 +1960,18 @@ static inline uint8_t digitalReadFast(uint8_t pin)
 		}
 		else if (pin == 35) {
 			return (CORE_PIN35_PINREG & CORE_PIN35_BITMASK) ? 1 : 0;
+		}
+		else if (pin == 36) {
+			return (CORE_PIN36_PINREG & CORE_PIN36_BITMASK) ? 1 : 0;
+		}
+		else if (pin == 37) {
+			return (CORE_PIN37_PINREG & CORE_PIN37_BITMASK) ? 1 : 0;
+		}
+		else if (pin == 38) {
+			return (CORE_PIN38_PINREG & CORE_PIN38_BITMASK) ? 1 : 0;
+		}
+		else if (pin == 39) {
+			return (CORE_PIN39_PINREG & CORE_PIN39_BITMASK) ? 1 : 0;
 		}
 		#endif
 		#if !defined(CORE_XTRA_PINS) && defined(CORE_PIN34_PINREG)

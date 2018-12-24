@@ -28,6 +28,7 @@
  * SOFTWARE.
  */
 
+#include <Arduino.h>
 #include "usb_dev.h"
 #include "usb_audio.h"
 #include "HardwareSerial.h"

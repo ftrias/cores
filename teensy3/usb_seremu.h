@@ -135,6 +135,7 @@ extern void serialEvent(void);
 
 #endif // SEREMU_INTERFACE
 
+// Vindor
 #ifdef SERIAL_FAKE
 #include "usb_seremu_fake.h"
 #endif // SERIAL_FAKE

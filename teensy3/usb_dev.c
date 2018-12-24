@@ -45,7 +45,13 @@
 #include "usb_mem.h"
 #include <string.h> // for memset
 
-#include "usb_audio.h"
+// This code has a known bug with compiled with -O2 optimization on gcc 5.4.1
+// https://forum.pjrc.com/threads/53574-Teensyduino-1-43-Beta-2?p=186177&viewfull=1#post186177
+#if defined(__MKL26Z64__)
+#pragma GCC optimize ("Os")
+#else
+#pragma GCC optimize ("O3")
+#endif
 
 // buffer descriptor table
 
@@ -463,6 +469,10 @@ static void usb_setup(void)
 			reply_buffer[0] = MULTITOUCH_FINGERS;
 			data = reply_buffer;
 			datalen = 1;
+		} else if (setup.wValue == 0x0100 && setup.wIndex == MULTITOUCH_INTERFACE) {
+			memset(reply_buffer, 0, 8);
+			data = reply_buffer;
+			datalen = 8;
 		} else {
 			endpoint0_stall();
 			return;
@@ -852,6 +862,7 @@ void _reboot_Teensyduino_(void)
 	__asm__ volatile("bkpt");
 }
 
+// Vindor
 void usb_default_reboot_hook(void) { 
 	_reboot_Teensyduino_();
 }

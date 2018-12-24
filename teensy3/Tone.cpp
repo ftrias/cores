@@ -28,10 +28,7 @@
  * SOFTWARE.
  */
 
-#include "core_pins.h"
-#include "pins_arduino.h"
-#include "HardwareSerial.h"
-#include "IntervalTimer.h"
+#include <Arduino.h>
 
 // IntervalTimer based tone.  This allows tone() to share the timers with other
 // libraries, rather than permanently hogging one PIT timer even for projects
@@ -73,6 +70,7 @@ void tone(uint8_t pin, uint16_t frequency, uint32_t duration)
 	} else {
 		count = 0xFFFFFFFD;
 	}
+	if (frequency < 1) frequency = 1; // minimum is 1 Hz
 	usec = (float)500000.0 / (float)frequency;
 	config = portConfigRegister(pin);
 

@@ -76,7 +76,11 @@ const struct digital_pin_bitband_and_config_table_struct digital_pin_to_info_PGM
 #ifdef CORE_XTRA_PINS
 	{GPIO_BITBAND_PTR(CORE_PIN34_PORTREG, CORE_PIN34_BIT), &CORE_PIN34_CONFIG},
 	{GPIO_BITBAND_PTR(CORE_PIN35_PORTREG, CORE_PIN35_BIT), &CORE_PIN35_CONFIG},
-#endif
+	{GPIO_BITBAND_PTR(CORE_PIN36_PORTREG, CORE_PIN36_BIT), &CORE_PIN36_CONFIG},
+	{GPIO_BITBAND_PTR(CORE_PIN37_PORTREG, CORE_PIN37_BIT), &CORE_PIN37_CONFIG},
+	{GPIO_BITBAND_PTR(CORE_PIN38_PORTREG, CORE_PIN38_BIT), &CORE_PIN38_CONFIG},
+	{GPIO_BITBAND_PTR(CORE_PIN39_PORTREG, CORE_PIN39_BIT), &CORE_PIN39_CONFIG},
+	#endif
 #if !defined(CORE_XTRA_PINS) && defined(CORE_PIN34_PORTREG)
 	{GPIO_BITBAND_PTR(CORE_PIN34_PORTREG, CORE_PIN34_BIT), &CORE_PIN34_CONFIG},
 	{GPIO_BITBAND_PTR(CORE_PIN35_PORTREG, CORE_PIN35_BIT), &CORE_PIN35_CONFIG},
@@ -591,9 +595,15 @@ void _init_Teensyduino_internal_(void)
 	// for background about this startup delay, please see these conversations
 	// https://forum.pjrc.com/threads/36606-startup-time-(400ms)?p=113980&viewfull=1#post113980
 	// https://forum.pjrc.com/threads/31290-Teensey-3-2-Teensey-Loader-1-24-Issues?p=87273&viewfull=1#post87273
+#if TEENSYDUINO >= 142
+	delay(25);
+	usb_init();
+	delay(275);
+#else
 	delay(50);
 	usb_init();
 	delay(350);
+#endif
 }
 
 

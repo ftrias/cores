@@ -28,7 +28,7 @@
  * SOFTWARE.
  */
 
-#include "WProgram.h"
+#include <Arduino.h>
 #include "usb_desc.h"
 
 #if F_CPU >= 20000000
@@ -63,6 +63,7 @@ FlightSimClass FlightSim;
 usb_seremu_class Serial;
 #endif
 
+// Vindor
 #ifdef SERIAL_FAKE
 usb_seremu_class Serial;
 #endif

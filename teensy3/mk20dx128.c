@@ -122,6 +122,7 @@ void fault_isr(void)
         ser_print("\n");
         asm("ldr %0, [sp, #0]" : "=r" (addr) ::);
 #endif
+// Vindor
 #if 0
 	while (1) {
 		// keep polling some communication while in fault
@@ -138,6 +139,7 @@ void fault_isr(void)
 
 void unused_isr(void)
 {
+// Vindor
 	asm("bkpt");
 	fault_isr();
 }
@@ -656,6 +658,8 @@ void (* const _VectorsFlash[NVIC_NUM_INTERRUPTS+16])(void) =
 };
 
 
+// Vindor
+#if 0
 __attribute__ ((section(".flashconfig"), used))
 const uint8_t flashconfigbytes[16] = {
 //0,0,0,0, 0,0,0,0, // backdoor
@@ -664,11 +668,14 @@ const uint8_t flashconfigbytes[16] = {
 //0, // EEPROM FEPROT
 //0, // flash option FOPT
 //0, // flash security FSEC
-	0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F,
-	0xFF, 0xFF, 0xFF, 0xFF,
-	0xFF, 0xFF, 0xFF, 0xFF
+	0x1F, 0xC2, 0x13, 0x4B, 0x83, 0x92, 0xAF, 0x29, // Backdoor
+	0xFF, 0xFF, 0xFF, 0xFF, // FPROT0-3, no protected pages
+        // Backdoor enabled, Mass Erase enabled, NXP access, Flash Secure
+	0b10011111,
+	FOPT,
+	0xFF, 0xFF
 };
-
+#endif
 
 // Automatically initialize the RTC.  When the build defines the compile
 // time, and the user has added a crystal, the RTC will automatically
@@ -719,6 +726,16 @@ void ResetHandler(void)
 	// early as possible can implement startup_early_hook()
 	startup_early_hook();
 
+// Vindor
+#ifdef __MK20DX256VLL10__
+	#define MPU_CESR (*(volatile uint32_t *)0x4000D000)
+	MPU_CESR = 0;
+	#define FMC_PFAPR_M4AP_RD 0x00000100
+	#define FMC_PFAPR_ALL_RW 0xFFFF    
+	FMC_PFAPR |= FMC_PFAPR_M4AP_RD;
+	// FMC_PFAPR |= FMC_PFAPR_ALL_RW;
+#endif
+
 	// enable clocks to always-used peripherals
 #if defined(__MK20DX128__)
 	SIM_SCGC5 = 0x00043F82;		// clocks active to all GPIO
@@ -758,6 +775,7 @@ void ResetHandler(void)
 	PORTB_PCR17 = PORT_PCR_MUX(3);
 #endif
 #ifdef KINETISK
+// Vindor
 #ifndef SKIP_RTC_OSC
 	// if the RTC oscillator isn't enabled, get it started early
 	if (!(RTC_CR & RTC_CR_OSCE)) {
@@ -1107,6 +1125,7 @@ void ResetHandler(void)
 	_init_Teensyduino_internal_();
 
 #if defined(KINETISK)
+// Vindor
 #ifndef SKIP_RTC_OSC
 	// RTC initialization
 	if (RTC_SR & RTC_SR_TIF) {
@@ -1138,7 +1157,7 @@ void ResetHandler(void)
 		*(uint32_t *)0x4003E01C = 0;
 	}
 #endif
-#endif
+#endif   // Vindor
 
 	__libc_init_array();
 
@@ -1235,6 +1254,12 @@ __attribute__((weak))
 void __cxa_guard_release(char *g)
 {
 	*g = 1;
+}
+
+__attribute__((weak))
+void abort(void)
+{
+	while (1) ;
 }
 
 #pragma GCC diagnostic pop

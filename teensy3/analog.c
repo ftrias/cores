@@ -524,8 +524,7 @@ void analogWriteDAC0(int val)
 	} else {
 		DAC0_C0 = DAC_C0_DACEN | DAC_C0_DACRFS; // 3.3V VDDA is DACREF_2
 	}
-	if (val < 0) val = 0;  // TODO: saturate instruction?
-	else if (val > 4095) val = 4095;
+	__asm__ ("usat    %[value], #12, %[value]\n\t" : [value] "+r" (val));  // 0 <= val <= 4095
 
 	*(volatile aliased_int16_t *)&(DAC0_DAT0L) = val;
 #elif defined(__MKL26Z64__)
@@ -554,8 +553,7 @@ void analogWriteDAC1(int val)
 	} else {
 		DAC1_C0 = DAC_C0_DACEN | DAC_C0_DACRFS; // 3.3V VDDA is DACREF_2
 	}
-	if (val < 0) val = 0;  // TODO: saturate instruction?
-	else if (val > 4095) val = 4095;
+	__asm__ ("usat    %[value], #12, %[value]\n\t" : [value] "+r" (val));  // 0 <= val <= 4095
 
 	*(volatile aliased_int16_t *)&(DAC1_DAT0L) = val;
 }

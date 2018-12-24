@@ -2795,6 +2795,8 @@ typedef struct {
 
 // Random Number Generator Accelerator (RNGA)
 
+// For info about using RNGA and the quality of its results:
+// https://forum.pjrc.com/threads/48745-Teensy-3-6-Random-Number-Generator
 #define RNG_CR			(*(volatile uint32_t *)0x40029000) // RNGA Control Register
 #define RNG_SR			(*(volatile uint32_t *)0x40029004) // RNGA Status Register
 #define RNG_ER			(*(volatile uint32_t *)0x40029008) // RNGA Entropy Register
@@ -3007,6 +3009,7 @@ typedef struct {
 #define CMP_MUXCR_PSTM          (uint8_t)0x40 // Pass Through Mode Enable
 #define CMP_MUXCR_PSEL(n)       (uint8_t)(((n) & 0x07) << 3) // Plus Input Mux Control
 #define CMP_MUXCR_MSEL(n)       (uint8_t)(((n) & 0x07) << 0) // Minus Input Mux Control
+#if defined(KINETISK)
 #define CMP1_CR0		(*(volatile uint8_t  *)0x40073008) // CMP Control Register 0
 #define CMP1_CR1		(*(volatile uint8_t  *)0x40073009) // CMP Control Register 1
 #define CMP1_FPR		(*(volatile uint8_t  *)0x4007300A) // CMP Filter Period Register
@@ -3025,7 +3028,7 @@ typedef struct {
 #define CMP3_SCR		(*(volatile uint8_t  *)0x4007301B) // CMP Status and Control Register
 #define CMP3_DACCR		(*(volatile uint8_t  *)0x4007301C) // DAC Control Register
 #define CMP3_MUXCR		(*(volatile uint8_t  *)0x4007301D) // MUX Control Register
-
+#endif
 // Analog Voltage Reference (VREFV1)
 
 #define VREF_TRM		(*(volatile uint8_t  *)0x40074000) // VREF Trim Register
@@ -3038,6 +3041,10 @@ typedef struct {
 #define VREF_SC_VREFST			((uint8_t)0x04)			// Internal Voltage Reference stable flag
 #define VREF_SC_MODE_LV(n)		(uint8_t)(((n) & 3) << 0)	// Buffer Mode selection: 0=Bandgap on only
 									//  2=Low-power buffer mode
+#define VREF_SC_MODE_LV_BANDGAPONLY     0
+#define VREF_SC_MODE_LV_HIGHPOWERBUF    1
+#define VREF_SC_MODE_LV_LOWPOWERBUF     2
+
 
 // Programmable Delay Block (PDB)
 
@@ -3322,8 +3329,8 @@ typedef struct {
 #define FTM0_CONF		(*(volatile uint32_t *)0x40038084) // Configuration
 #define FTM_CONF_GTBEOUT		0x400				// Global Time Base Output
 #define FTM_CONF_GTBEEN			0x200				// Global Time Base Enable
-#define FTM_CONF_BDMMODE		(((n) & 3) << 6)		// Behavior when in debug mode
-#define FTM_CONF_NUMTOF			(((n) & 31) << 0)		// ratio of counter overflows to TOF bit set
+#define FTM_CONF_BDMMODE(n)		(((n) & 3) << 6)		// Behavior when in debug mode
+#define FTM_CONF_NUMTOF(n)		(((n) & 31) << 0)		// ratio of counter overflows to TOF bit set
 #define FTM0_FLTPOL		(*(volatile uint32_t *)0x40038088) // FTM Fault Input Polarity
 #define FTM_FLTPOL_FLT3POL		0x08				// Fault Input 3 Polarity
 #define FTM_FLTPOL_FLT2POL		0x04				// Fault Input 2 Polarity
@@ -4361,7 +4368,7 @@ typedef struct {
 #define SPI_MCR_FRZ			((uint32_t)0x08000000)		//
 #define SPI_MCR_MTFE			((uint32_t)0x04000000)		//
 #define SPI_MCR_ROOE			((uint32_t)0x01000000)		//
-#define SPI_MCR_PCSIS(n)		(((n) & 0x1F) << 16)		//
+#define SPI_MCR_PCSIS(n)		(((n) & 0x3F) << 16)		//
 #define SPI_MCR_DOZE			((uint32_t)0x00008000)		//
 #define SPI_MCR_MDIS			((uint32_t)0x00004000)		//
 #define SPI_MCR_DIS_TXF			((uint32_t)0x00002000)		//
@@ -4409,7 +4416,7 @@ typedef struct {
 #define SPI_PUSHR_CTAS(n)		(((n) & 7) << 28)		//
 #define SPI_PUSHR_EOQ			((uint32_t)0x08000000)		//
 #define SPI_PUSHR_CTCNT			((uint32_t)0x04000000)		//
-#define SPI_PUSHR_PCS(n)		(((n) & 31) << 16)		//
+#define SPI_PUSHR_PCS(n)		(((n) & 0x3f) << 16)		//
 #define SPI0_PUSHR_SLAVE	(KINETISK_SPI0.PUSHR)	// DSPI PUSH TX FIFO Register In Slave Mode
 #define SPI0_POPR		(KINETISK_SPI0.POPR)	// DSPI POP RX FIFO Register
 #define SPI0_TXFR0		(KINETISK_SPI0.TXFR[0])	// DSPI Transmit FIFO Registers
