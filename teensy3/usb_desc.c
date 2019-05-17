@@ -1191,7 +1191,9 @@ static uint8_t config_descriptor[CONFIG_DESC_SIZE] = {
 	12,					// bLength
 	0x24,					// bDescriptorType, 0x24 = CS_INTERFACE
 	0x02,					// bDescriptorSubType, 2 = INPUT_TERMINAL
+	// 0x00,					// bDescriptorSubType, 0 = Undefined
 	1,					// bTerminalID
+	// 0xFF, 0x01,				// wTerminalType, 0x01FF = Vendor-spec
 	//0x01, 0x02,				// wTerminalType, 0x0201 = MICROPHONE
 	//0x03, 0x06,				// wTerminalType, 0x0603 = Line Connector
 	0x02, 0x06,				// wTerminalType, 0x0602 = Digital Audio
