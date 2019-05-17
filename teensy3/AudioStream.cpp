@@ -55,8 +55,9 @@ uint16_t AudioStream::cpu_cycles_total_max = 0;
 uint16_t AudioStream::memory_used = 0;
 uint16_t AudioStream::memory_used_max = 0;
 
-
-
+#ifdef AUDIO_SAMPLE_VARIABLE
+float AUDIO_SAMPLE_RATE_EXACT = 44100.0;
+#endif
 
 // Set up the pool of audio data blocks
 // placing them all onto the free list

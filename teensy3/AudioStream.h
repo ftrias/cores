@@ -55,6 +55,14 @@
 #endif
 #endif
 
+#ifdef AUDIO_SAMPLE_VARIABLE
+
+#ifndef __ASSEMBLER__
+extern float AUDIO_SAMPLE_RATE_EXACT;
+#endif
+
+#else
+
 #ifndef AUDIO_SAMPLE_RATE_EXACT
 #if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
 // Vindor start
@@ -65,6 +73,8 @@
 #define AUDIO_SAMPLE_RATE_EXACT 22000.0 // 48 MHz / 2176, or 96 MHz * 147 / 1250 / 128
 // Vindor end
 #endif
+#endif
+
 #endif
 
 #define AUDIO_SAMPLE_RATE AUDIO_SAMPLE_RATE_EXACT
@@ -185,6 +195,12 @@ private:
 	static audio_block_t *memory_pool;
 	static uint32_t memory_pool_available_mask[];
 	static uint16_t memory_pool_first_mask;
+
+	// FXT
+	public:
+	void getNext() {
+    	update();
+	}
 };
 
 #endif

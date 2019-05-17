@@ -320,6 +320,10 @@ void AudioOutputUSB::update(void)
 // no data to transmit
 unsigned int usb_audio_transmit_callback(void)
 {
+	#ifdef VINDOR_BUG_AUDIO_TRANSMIT
+	return 0;
+	#endif
+
 	static uint32_t count=5;
 	uint32_t avail, num, target, offset, len=0;
 	audio_block_t *left, *right;
