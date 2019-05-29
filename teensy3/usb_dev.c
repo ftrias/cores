@@ -594,6 +594,7 @@ static void usb_control(uint32_t stat)
 	case 0x01:  // OUT transaction received from host
 	case 0x02:
 		//serial_print("PID=OUT\n");
+		// VINDOR
 		if (setup.wRequestAndType == 0x2021) {
 			if (buf[0] == 134) usb_reboot_timer = 15;
 			endpoint0_transmit(NULL, 0);
@@ -904,6 +905,7 @@ void usb_isr(void)
 			t = usb_reboot_timer;
 			if (t) {
 				usb_reboot_timer = --t;
+				// VINDOR
 				//if (!t) _reboot_Teensyduino_();
 				if (!t) usb_reboot_hook();
 			}
@@ -1129,10 +1131,11 @@ void usb_isr(void)
 	if ((status & USB_ISTAT_SLEEP /* 10 */ )) {
 		//serial_print("sleep\n");
 		USB0_ISTAT = USB_ISTAT_SLEEP;
-		usb_configuration = 0;
+		usb_configuration = 0; // VINDOR
 	}
 }
 
+// VINDOR
 void usb_default_early_hook(void) { }
 void usb_early_hook(void) __attribute__ ((weak, alias("usb_default_early_hook")));
 
@@ -1161,7 +1164,7 @@ void usb_init(void)
 #ifdef HAS_KINETIS_MPU
 	MPU_RGDAAC0 |= 0x03000000;
 #endif
-#if F_CPU == 180000000 || F_CPU == 216000000
+#if F_CPU == 180000000 || F_CPU == 216000000 || F_CPU == 256000000
 	// if using IRC48M, turn on the USB clock recovery hardware
 	USB0_CLK_RECOVER_IRC_EN = USB_CLK_RECOVER_IRC_EN_IRC_EN | USB_CLK_RECOVER_IRC_EN_REG_EN;
 	USB0_CLK_RECOVER_CTRL = USB_CLK_RECOVER_CTRL_CLOCK_RECOVER_EN |

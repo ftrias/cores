@@ -55,6 +55,7 @@ uint16_t AudioStream::cpu_cycles_total_max = 0;
 uint16_t AudioStream::memory_used = 0;
 uint16_t AudioStream::memory_used_max = 0;
 
+// Vindor
 #ifdef AUDIO_SAMPLE_VARIABLE
 float AUDIO_SAMPLE_RATE_EXACT = 44100.0;
 #endif
@@ -244,6 +245,8 @@ void AudioConnection::disconnect(void)
 	// Remove destination from source list
 	p = src.destination_list;
 	if (p == NULL) {
+//>>> PAH re-enable the IRQ
+		__enable_irq();
 		return;
 	} else if (p == this) {
 		if (p->next_dest) {
@@ -265,8 +268,14 @@ void AudioConnection::disconnect(void)
 			p = p->next_dest;
 		}
 	}
+//>>> PAH release the audio buffer properly
 	//Remove possible pending src block from destination
-	dst.inputQueue[dest_index] = NULL;
+	if(dst.inputQueue[dest_index] != NULL) {
+		AudioStream::release(dst.inputQueue[dest_index]);
+		// release() re-enables the IRQ. Need it to be disabled a little longer
+		__disable_irq();
+		dst.inputQueue[dest_index] = NULL;
+	}
 
 	//Check if the disconnected AudioStream objects should still be active
 	src.numConnections--;

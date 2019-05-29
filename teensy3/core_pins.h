@@ -1628,6 +1628,7 @@ static inline void digitalWriteFast(uint8_t pin, uint8_t val)
 				CORE_PIN33_PORTSET = CORE_PIN33_BITMASK;
 			}
 			#endif
+			// VINDOR
 			#if defined(CORE_XTRA_PINS)
 			else if (pin == 34) {
 				CORE_PIN34_PORTSET = CORE_PIN34_BITMASK;
@@ -1784,6 +1785,7 @@ static inline void digitalWriteFast(uint8_t pin, uint8_t val)
 				CORE_PIN33_PORTCLEAR = CORE_PIN33_BITMASK;
 			}
 			#endif
+			// VINDOR
 			#if defined(CORE_XTRA_PINS)
 			else if (pin == 34) {
 				CORE_PIN34_PORTCLEAR = CORE_PIN34_BITMASK;
@@ -1954,6 +1956,7 @@ static inline uint8_t digitalReadFast(uint8_t pin)
 			return (CORE_PIN33_PINREG & CORE_PIN33_BITMASK) ? 1 : 0;
 		}
 		#endif
+		// VINDOR
 		#if defined(CORE_XTRA_PINS)
 		else if (pin == 34) {
 			return (CORE_PIN34_PINREG & CORE_PIN34_BITMASK) ? 1 : 0;
@@ -2158,7 +2161,9 @@ uint32_t micros(void);
 static inline void delayMicroseconds(uint32_t) __attribute__((always_inline, unused));
 static inline void delayMicroseconds(uint32_t usec)
 {
-#if F_CPU == 240000000
+#if F_CPU == 256000000
+	uint32_t n = usec * 85;
+#elif F_CPU == 240000000
 	uint32_t n = usec * 80;
 #elif F_CPU == 216000000
 	uint32_t n = usec * 72;
@@ -2198,11 +2203,13 @@ static inline void delayMicroseconds(uint32_t usec)
 #endif
 #ifdef KINETISL
 		"sub    %0, #1"				"\n\t"
+		"bne    L_%=_delayMicroseconds"		"\n"
+		: "+l" (n) :
 #else
 		"subs   %0, #1"				"\n\t"
-#endif
 		"bne    L_%=_delayMicroseconds"		"\n"
 		: "+r" (n) :
+#endif
 	);
 }
 

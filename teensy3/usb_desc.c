@@ -490,7 +490,6 @@ static uint8_t flightsim_report_desc[] = {
   #error "MIDI_NUM_CABLES must be defined between 1 to 16"
   #endif
 #define MIDI_INTERFACE_DESC_SIZE	9+7+((6+6+9+9)*MIDI_NUM_CABLES)+(9+4+MIDI_NUM_CABLES)*2
-// #define MIDI_INTERFACE_DESC_SIZE	9+7+6+6+9+9+9+5+9+5
 #else
 #define MIDI_INTERFACE_DESC_SIZE	0
 #endif
@@ -1598,6 +1597,7 @@ const uint8_t usb_endpoint_config_table[NUM_ENDPOINTS] =
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 #endif
+
 
 const uint8_t usb_endpoint_config_table[NUM_ENDPOINTS] =
 {

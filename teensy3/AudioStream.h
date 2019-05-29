@@ -55,6 +55,7 @@
 #endif
 #endif
 
+// VINDOR
 #ifdef AUDIO_SAMPLE_VARIABLE
 
 #ifndef __ASSEMBLER__
@@ -196,7 +197,7 @@ private:
 	static uint32_t memory_pool_available_mask[];
 	static uint16_t memory_pool_first_mask;
 
-	// FXT
+	// VINDOR
 	public:
 	void getNext() {
     	update();

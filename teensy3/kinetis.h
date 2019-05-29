@@ -761,8 +761,14 @@ enum IRQ_NUMBER_t {
 
 #endif // end of board-specific definitions
 
-
-#if (F_CPU == 240000000)
+#if (F_CPU == 256000000)
+ #define F_PLL 256000000
+ #ifndef F_BUS
+ #define F_BUS 64000000
+ //#define F_BUS 128000000  // all the usual overclocking caveats apply...
+ #endif
+ #define F_MEM 32000000
+#elif (F_CPU == 240000000)
  #define F_PLL 240000000
  #ifndef F_BUS
  #define F_BUS 60000000
@@ -4545,7 +4551,7 @@ typedef struct {
 #define SPI1_MH			(KINETISL_SPI1.MH)		// Match High
 #define SPI1_DL			(KINETISL_SPI1.DL)		// Data Low
 #define SPI1_DH			(KINETISL_SPI1.DH)		// Data High
-#define SPI1_CI			(KINETISL_SPI1.CI)		// Dlear Interrupt
+#define SPI1_CI			(KINETISL_SPI1.CI)		// Clear Interrupt
 #define SPI1_C3			(KINETISL_SPI1.C3)		// Control Register 3
 #endif
 
