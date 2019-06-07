@@ -774,10 +774,12 @@ void ResetHandler(void)
 	UART0_C2 = UART_C2_TE;
 	PORTB_PCR17 = PORT_PCR_MUX(3);
 #endif
-#ifdef KINETISK
+#if defined(KINETISK) && !defined(__MK66FX1M0__)
 // Vindor
 #ifndef SKIP_RTC_OSC
 	// if the RTC oscillator isn't enabled, get it started early
+	// But don't do this early on Teensy 3.6 - RTC_CR depends on 3.3V+VBAT
+	// which may be ~0.4V "behind" 3.3V if the power ramps up slowly.
 	if (!(RTC_CR & RTC_CR_OSCE)) {
 		RTC_SR = 0;
 		RTC_CR = RTC_CR_SC16P | RTC_CR_SC4P | RTC_CR_OSCE;
