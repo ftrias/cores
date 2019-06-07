@@ -1472,7 +1472,7 @@ void usb_init_descriptor(int configuration) {
                 device_descriptor[11] = MSB(PRODUCT_ID2);
         }
         else {
-                config_descriptor[4] = 4; // use all interfaces (Audio, Midi)
+                config_descriptor[4] = NUM_INTERFACE; // use all interfaces (Audio, Midi)
                 device_descriptor[10] = LSB(PRODUCT_ID);
                 device_descriptor[11] = MSB(PRODUCT_ID);                
         }
