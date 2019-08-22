@@ -1,4 +1,4 @@
-#ifdef USB_AUDIO_MIDI
+#ifdef VINDOR_USB_AUDIO_MIDI
   #define SERIAL_FAKE
 
   #define VENDOR_ID             0x1FC9
@@ -41,7 +41,7 @@
   #define ENDPOINT5_CONFIG      ENDPOINT_TRANSMIT_ISOCHRONOUS
 #endif
 
-#ifdef USB_AUDIO_MIDI_KEYBOARD
+#ifdef VINDOR_USB_AUDIO_MIDI_KEYBOARD
   #define VENDOR_ID             0x1FC9
   #define PRODUCT_ID            0x818C
   #define DEVICE_CLASS          0xEF
@@ -89,9 +89,9 @@
   #define ENDPOINT7_CONFIG      ENDPOINT_TRANSMIT_ISOCHRONOUS
 #endif
 
-#ifdef USB_AUDIO_MIDI_KEYBOARD_SERIAL
+#ifdef VINDOR_USB_AUDIO_MIDI_KEYBOARD_SERIAL
   #define VENDOR_ID             0x1FC9
-  #define PRODUCT_ID            0x818C
+  #define PRODUCT_ID            0x818E
   #define DEVICE_CLASS          0xEF
   #define DEVICE_SUBCLASS       0x02
   #define DEVICE_PROTOCOL       0x01
@@ -125,14 +125,6 @@
   #define CDC_RX_SIZE           64
   #define CDC_TX_SIZE           64
 
-  // #define SEREMU_INTERFACE      2       // Serial emulation
-  // #define SEREMU_TX_ENDPOINT    1
-  // #define SEREMU_TX_SIZE        64
-  // #define SEREMU_TX_INTERVAL    1
-  // #define SEREMU_RX_ENDPOINT    2
-  // #define SEREMU_RX_SIZE        32
-  // #define SEREMU_RX_INTERVAL    2
-
   #define KEYMEDIA_INTERFACE    4       // Keyboard Media Keys
   #define KEYMEDIA_ENDPOINT     4
   #define KEYMEDIA_SIZE         8
@@ -157,12 +149,12 @@
   #define ENDPOINT10_CONFIG     ENDPOINT_TRANSMIT_ONLY
 #endif
 
-#ifdef USB_AUDIO_MIDI_SEREMU
+#ifdef VINDOR_USB_AUDIO_MIDI_SEREMU
   #define VENDOR_ID             0x1FC9
-  #define PRODUCT_ID            0x818C
-  #define DEVICE_CLASS          0xEF
-  #define DEVICE_SUBCLASS       0x02
-  #define DEVICE_PROTOCOL       0x01
+  #define PRODUCT_ID            0x818F
+  // #define DEVICE_CLASS          0xEF
+  // #define DEVICE_SUBCLASS       0x02
+  // #define DEVICE_PROTOCOL       0x01
   #define MANUFACTURER_NAME     {'V','i','n','d','o','r',' ','M','u','s','i','c',',',' ','I','n','c','.'}
   #define MANUFACTURER_NAME_LEN 18
   #define PRODUCT_NAME          {'V','i','n','d','o','r'}
