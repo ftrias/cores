@@ -33,6 +33,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "binary.h"
 #include "core_id.h"
 #include "core_pins.h"
@@ -127,7 +128,7 @@ constexpr auto max(A&& a, B&& b) -> decltype(a < b ? std::forward<A>(a) : std::f
   typeof(high) _high = (high); \
   (_amt < _low) ? _low : ((_amt > _high) ? _high : _amt); \
 })
-#define round(x) ({ \
+#define xround(x) ({ \
   typeof(x) _x = (x); \
   (_x>=0) ? (long)(_x+0.5) : (long)(_x-0.5); \
 })
@@ -190,8 +191,6 @@ void loop(void);
 typedef bool boolean;
 #else
 typedef uint8_t boolean;
-#define false 0
-#define true (!false)
 #endif
 
 #endif
