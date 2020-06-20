@@ -41,6 +41,60 @@
   #define ENDPOINT5_CONFIG      ENDPOINT_TRANSMIT_ISOCHRONOUS
 #endif
 
+#ifdef VINDOR_USB_AUDIO_MIDI_SERIAL
+  #define VENDOR_ID             0x1FC9
+  #define PRODUCT_ID            0x818A
+#ifdef USB_ALTERNATE_PRODUCT_ID
+  #define PRODUCT_ID2           0x818B
+#endif
+
+  #define DEVICE_CLASS          0xEF
+  #define DEVICE_SUBCLASS       0x02
+  #define DEVICE_PROTOCOL       0x01
+
+  #define MANUFACTURER_NAME     {'V','i','n','d','o','r',' ','M','u','s','i','c',',',' ','I','n','c','.'}
+  #define MANUFACTURER_NAME_LEN 18
+  #define PRODUCT_NAME          {'V','i','n','d','o','r'}
+  #define PRODUCT_NAME_LEN      6
+  #define EP0_SIZE              64
+  #define NUM_ENDPOINTS         8
+  #define NUM_USB_BUFFERS       16
+  #define NUM_INTERFACE         6
+
+  #define MIDI_INTERFACE        0       // MIDI
+  #define MIDI_NUM_CABLES       1
+  #define MIDI_TX_ENDPOINT      1
+  #define MIDI_TX_SIZE          64
+  #define MIDI_RX_ENDPOINT      2
+  #define MIDI_RX_SIZE          64
+
+  #define AUDIO_INTERFACE       1       // Audio (uses 3 consecutive interfaces)
+  #define AUDIO_TX_ENDPOINT     3
+  #define AUDIO_TX_SIZE         180
+  #define AUDIO_RX_ENDPOINT     4
+  #define AUDIO_RX_SIZE         180
+  #define AUDIO_SYNC_ENDPOINT   5
+
+  #define CDC_IAD_DESCRIPTOR	  1
+  #define CDC_STATUS_INTERFACE	4
+  #define CDC_DATA_INTERFACE	  5	// Serial
+  #define CDC_ACM_ENDPOINT	    6
+  #define CDC_RX_ENDPOINT       7
+  #define CDC_TX_ENDPOINT       8
+  #define CDC_ACM_SIZE          16
+  #define CDC_RX_SIZE           64
+  #define CDC_TX_SIZE           64
+
+  #define ENDPOINT1_CONFIG      ENDPOINT_TRANSMIT_ONLY
+  #define ENDPOINT2_CONFIG      ENDPOINT_RECEIVE_ONLY
+  #define ENDPOINT3_CONFIG      ENDPOINT_TRANSMIT_ISOCHRONOUS
+  #define ENDPOINT4_CONFIG      ENDPOINT_RECEIVE_ISOCHRONOUS
+  #define ENDPOINT5_CONFIG      ENDPOINT_TRANSMIT_ISOCHRONOUS
+  #define ENDPOINT6_CONFIG	ENDPOINT_TRANSMIT_ONLY
+  #define ENDPOINT7_CONFIG	ENDPOINT_RECEIVE_ONLY
+  #define ENDPOINT8_CONFIG	ENDPOINT_TRANSMIT_ONLY
+#endif
+
 #ifdef VINDOR_USB_AUDIO_MIDI_KEYBOARD
   #define VENDOR_ID             0x1FC9
   #define PRODUCT_ID            0x818C
