@@ -2134,6 +2134,16 @@ static inline uint8_t shiftIn(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrde
 void _reboot_Teensyduino_(void) __attribute__((noreturn));
 void _restart_Teensyduino_(void) __attribute__((noreturn));
 
+// Define a set of flags to know which things yield should check when called.
+// Probably should be in a better spot.  
+extern uint8_t yield_active_check_flags;
+
+#define YIELD_CHECK_USB_SERIAL 		0x1   	// check the USB for Serial.available()
+#define YIELD_CHECK_HARDWARE_SERIAL 0x2		// check Hardware Serial ports available
+#define YIELD_CHECK_EVENT_RESPONDER	0x4		// User has created eventResponders that use yield
+#define YIELD_CHECK_USB_SERIALUSB1  0x8		// Check for SerialUSB1
+#define YIELD_CHECK_USB_SERIALUSB2  0x10	// Check for SerialUSB2
+
 void yield(void);
 
 void delay(uint32_t msec);

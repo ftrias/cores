@@ -601,6 +601,7 @@ static uint8_t flightsim_report_desc[] = {
 
 // USB Configuration Descriptor.  This huge descriptor tells all
 // of the devices capbilities.
+// VINDOR
 #ifdef PRODUCT_ID2
 static
 #else

@@ -930,7 +930,7 @@ long long cpu_ticks(void)
 
 
 void usb_isr(void)
-{		
+{
 	uint8_t status, stat, t;
 
 	//serial_print("isr");
@@ -1195,7 +1195,7 @@ void usb_early_hook(void) __attribute__ ((weak, alias("usb_default_early_hook"))
 
 void usb_init(void)
 {
-	usb_early_hook();
+	usb_early_hook(); // VINDOR
 
 	int i;
 
