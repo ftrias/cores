@@ -34,7 +34,7 @@
 #include "usb_desc.h"
 #ifdef AUDIO_INTERFACE
 
-#define FEATURE_MAX_VOLUME 0x100  // volume accepted from 0 to 0x100
+#define FEATURE_MAX_VOLUME 0xFF  // volume accepted from 0 to 0xFF
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,6 +52,7 @@ extern uint8_t usb_audio_transmit_setting;
 #ifdef __cplusplus
 }
 
+// Vindor
 // audio features supported
 class usb_audio_features {
   public:
@@ -78,6 +79,7 @@ public:
 	friend int usb_audio_set_feature(void *stp, uint8_t *buf);
 	friend int usb_audio_get_feature(void *stp, uint8_t *data, uint32_t *datalen);
 
+	// Vindor
 	static usb_audio_features features;
 
 	float volume(int channel = 0) {

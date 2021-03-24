@@ -7,9 +7,9 @@
   #define PRODUCT_ID2           0x818D
 #endif
 
-  #define DEVICE_CLASS          0xEF
-  #define DEVICE_SUBCLASS       0x02
-  #define DEVICE_PROTOCOL       0x01
+  // #define DEVICE_CLASS          0xEF
+  // #define DEVICE_SUBCLASS       0x02
+  // #define DEVICE_PROTOCOL       0x01
 
   #define MANUFACTURER_NAME     {'V','i','n','d','o','r',' ','M','u','s','i','c',',',' ','I','n','c','.'}
   #define MANUFACTURER_NAME_LEN 18

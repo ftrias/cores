@@ -657,9 +657,12 @@ static void usb_control(uint32_t stat)
 		}
 #endif
 #ifdef SEREMU_INTERFACE
-		if (setup.word1 == 0x03000921 && setup.word2 == ((4<<16)|SEREMU_INTERFACE)
-		  && buf[0] == 0xA9 && buf[1] == 0x45 && buf[2] == 0xC2 && buf[3] == 0x6B) {
-			usb_reboot_timer = 5;
+		if (setup.word1 == 0x03000921 && setup.word2 == ((4<<16)|SEREMU_INTERFACE)) {
+			if (buf[0] == 0xA9 && buf[1] == 0x45 && buf[2] == 0xC2 && buf[3] == 0x6B) {
+				usb_reboot_timer = 5;
+			} else {
+				usb_seremu_online = 1;
+			}
 			endpoint0_transmit(NULL, 0);
 		}
 #endif
@@ -1204,7 +1207,7 @@ void usb_init(void)
 
 	usb_init_serialnumber();
 
-	for (i=0; i <= NUM_ENDPOINTS*4; i++) {
+	for (i=0; i < (NUM_ENDPOINTS+1)*4; i++) {
 		table[i].desc = 0;
 		table[i].addr = 0;
 	}

@@ -47,8 +47,7 @@ audio_block_t * AudioInputUSB::ready_right;
 uint16_t AudioInputUSB::incoming_count;
 uint8_t AudioInputUSB::receive_flag;
 
-int usb_aduio_sync_count_last;
-
+// VINDOR
 usb_audio_features AudioInputUSB::features;
 
 #define DMABUFATTR __attribute__ ((section(".dmabuffers"), aligned (4)))
@@ -401,6 +400,7 @@ int usb_audio_get_feature(void *stp, uint8_t *data, uint32_t *datalen)
 			}
 			else if (setup.bCS==0x02) { // volume
 				if (setup.bRequest==0x81) { // GET_CURR
+					// Vindor
 					data[0] = AudioInputUSB::features.volume[setup.bChannel-1] & 0xFF;
 					data[1] = (AudioInputUSB::features.volume[setup.bChannel-1] >> 8) & 0xFF;
 				}
@@ -440,6 +440,7 @@ int usb_audio_set_feature(void *stp, uint8_t *buf)
 			}
 			else if (setup.bCS==0x02) { // volume
 				if (setup.bRequest==0x01) { // SET_CUR
+					// Vindor
 					AudioInputUSB::features.xtra = setup.bChannel;
 					AudioInputUSB::features.volume[setup.bChannel-1] = buf[0] + (buf[1]<<8);
 					AudioInputUSB::features.change = 1;
